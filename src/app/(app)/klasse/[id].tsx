@@ -3,10 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useClasses, useClassGradingSessions, useClassStudents } from '@/api/queries';
 import type { ClassStudent } from '@/api/types';
-import { Fab } from '@/components/controls';
+import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid, type SelectionAction } from '@/components/StudentGrid';
 import { formatDate } from '@/lib/dates';
-import { openNewEntry } from '@/lib/navigation';
+import { openNewEntry, openWeek } from '@/lib/navigation';
 import { colors, font, radius, shadow, spacing } from '@/theme';
 
 export default function ClassScreen() {
@@ -37,7 +37,14 @@ export default function ClassScreen() {
 
   return (
     <View style={styles.flex}>
-      <Stack.Screen options={{ title: data?.meta.class.name ?? name ?? 'Klasse' }} />
+      <Stack.Screen
+        options={{
+          title: data?.meta.class.name ?? name ?? 'Klasse',
+          headerRight: () => (
+            <LinkButton label="Woche" onPress={() => openWeek({ classId }, data?.meta.class.name ?? name)} />
+          ),
+        }}
+      />
       <StudentGrid
         students={data?.data ?? []}
         recentDays={data?.meta.recent_days}

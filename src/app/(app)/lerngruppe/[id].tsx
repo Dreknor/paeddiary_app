@@ -3,9 +3,9 @@ import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useStudentsOfClasses } from '@/api/queries';
-import { Fab } from '@/components/controls';
+import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid } from '@/components/StudentGrid';
-import { openNewEntry } from '@/lib/navigation';
+import { openNewEntry, openWeek } from '@/lib/navigation';
 import { parseIdList } from '@/lib/params';
 
 /**
@@ -14,13 +14,18 @@ import { parseIdList } from '@/lib/params';
  * Gruppen-Graduierungen sind laut Datenmodell nur je Klasse möglich.
  */
 export default function LearningGroupScreen() {
-  const { name, classIds } = useLocalSearchParams<{ id: string; name?: string; classIds?: string }>();
+  const { id, name, classIds } = useLocalSearchParams<{ id: string; name?: string; classIds?: string }>();
   const ids = useMemo(() => parseIdList(classIds), [classIds]);
   const { students, isLoading, isRefetching, error, refetch } = useStudentsOfClasses(ids);
 
   return (
     <View style={styles.flex}>
-      <Stack.Screen options={{ title: name ?? 'Lerngruppe' }} />
+      <Stack.Screen
+        options={{
+          title: name ?? 'Lerngruppe',
+          headerRight: () => <LinkButton label="Woche" onPress={() => openWeek({ groupId: Number(id) }, name)} />,
+        }}
+      />
       <StudentGrid
         students={students}
         isLoading={isLoading}

@@ -6,6 +6,7 @@ import { useClasses } from '@/api/queries';
 import type { LearningGroup, SchoolClass } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { LinkButton } from '@/components/controls';
+import { openWeek } from '@/lib/navigation';
 import { EmptyState, ErrorBox, Loading } from '@/components/ui';
 import { useOutbox } from '@/sync/outbox';
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
@@ -110,6 +111,7 @@ function ClassCard({ item }: { item: SchoolClass }) {
           {item.students_count} Schüler · {item.school_year}
         </Text>
       </View>
+      <WeekButton onPress={() => openWeek({ classId: item.id }, item.name)} name={item.name} />
     </Pressable>
   );
 }
@@ -135,6 +137,21 @@ function GroupCard({ item, classes }: { item: LearningGroup; classes: SchoolClas
         <Text style={styles.cardTitle}>{item.name}</Text>
         <Text style={styles.cardMeta}>{names.join(' · ')}</Text>
       </View>
+      <WeekButton onPress={() => openWeek({ groupId: item.id }, item.name)} name={item.name} />
+    </Pressable>
+  );
+}
+
+/** Direkt zur Wochenansicht (Kalender). */
+function WeekButton({ onPress, name }: { onPress: () => void; name: string }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.weekButton, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Wochenansicht ${name}`}
+    >
+      <Text style={styles.weekButtonText}>Woche</Text>
     </Pressable>
   );
 }
@@ -173,4 +190,16 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, padding: spacing.lg, gap: spacing.xs },
   cardTitle: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: colors.text },
   cardMeta: { fontSize: font.size.sm, color: colors.textMuted },
+  weekButton: {
+    alignSelf: 'center',
+    minHeight: touchTarget,
+    minWidth: touchTarget,
+    marginRight: spacing.md,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+  },
+  weekButtonText: { color: colors.primary, fontWeight: font.weight.semibold, fontSize: font.size.sm },
 });

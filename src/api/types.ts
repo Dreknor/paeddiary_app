@@ -416,3 +416,72 @@ export type Device = {
   expires_at: string | null;
   is_current: boolean;
 };
+
+// ---------------------------------------------------------------- Wochenansicht (Kalender)
+
+export type WeekColumnType = 'boolean' | 'ampel' | 'text';
+
+export type WeekEntry = {
+  id: number;
+  class_id: number;
+  schueler_ids: number[];
+  entry_date: string;
+  content: string;
+  category_id: number | null;
+  category_name: string | null;
+  category_color: string | null;
+  created_by_name: string | null;
+  is_own: boolean;
+  is_completed: boolean;
+  completed_at: string | null;
+};
+
+export type WeekStudent = {
+  id: number;
+  firstname: string;
+  lastname: string;
+  class_id: number;
+  current_grading: ClassStudent['current_grading'];
+  absence_alerts: { type: string | null; label: string; severity: string; summary: string }[];
+};
+
+export type WeekAppointment = {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string;
+  start_time: string | null;
+  end_time: string | null;
+  is_recurring: boolean;
+  class_ids: number[];
+  group_ids: number[];
+  schueler_ids: number[];
+};
+
+export type DiaryWeek = {
+  week_start: string;
+  week_end: string;
+  group: { id: number; name: string } | null;
+  classes: { id: number; name: string; short_name: string | null; color: string | null }[];
+  days: { date: string; is_holiday: boolean; holiday_name: string | null }[];
+  students: WeekStudent[];
+  entries: WeekEntry[];
+  pauses: { entry_id: number; schueler_id: number; date: string }[];
+  absences: { schueler_id: number; date: string }[];
+  day_pauses: { class_id: number; date: string; reason: string }[];
+  columns: { id: number; class_id: number; name: string; type: WeekColumnType; category: string | null }[];
+  column_values: { column_id: number; schueler_id: number; date: string; value: string | null }[];
+  tasks: {
+    id: number;
+    schueler_id: number;
+    title: string;
+    description: string | null;
+    due_date: string | null;
+    highlighted: boolean;
+  }[];
+  appointments: WeekAppointment[];
+  hidden_category_ids: number[];
+};
+
+/** Klasse oder Lerngruppe, für die die Wochenansicht geladen wird. */
+export type WeekScope = { classId: number } | { groupId: number };

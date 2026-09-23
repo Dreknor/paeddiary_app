@@ -18,6 +18,7 @@ export default function AppLayout() {
         <Stack.Screen name="index" options={{ title: 'Meine Klassen' }} />
         <Stack.Screen name="klasse/[id]" options={{ title: 'Klasse' }} />
         <Stack.Screen name="lerngruppe/[id]" options={{ title: 'Lerngruppe' }} />
+        <Stack.Screen name="kalender" options={{ title: 'Woche' }} />
         <Stack.Screen name="schueler/[id]" options={{ title: '' }} />
         <Stack.Screen name="eintrag/neu" options={{ title: 'Neuer Eintrag', presentation: 'modal' }} />
         <Stack.Screen name="eintrag/[id]" options={{ title: 'Eintrag', presentation: 'modal' }} />

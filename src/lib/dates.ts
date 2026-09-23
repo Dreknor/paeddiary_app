@@ -57,3 +57,26 @@ export function schoolYearStartIso(reference = new Date()): string {
   const year = reference.getMonth() >= 7 ? reference.getFullYear() : reference.getFullYear() - 1;
   return `${year}-08-01`;
 }
+
+/** Montag der Woche, in der `iso` liegt. */
+export function startOfWeekIso(iso: string): string {
+  const d = parseIsoDate(iso);
+  const offset = (d.getDay() + 6) % 7; // Mo = 0 … So = 6
+  return addDays(iso, -offset);
+}
+
+/** Kalenderwoche nach ISO 8601. */
+export function isoWeekNumber(iso: string): number {
+  const d = parseIsoDate(iso);
+  const thursday = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const firstThursday = new Date(thursday.getFullYear(), 0, 4);
+  return 1 + Math.round((thursday.getTime() - firstThursday.getTime()) / (7 * 86_400_000));
+}
+
+const weekdayShortFormat = new Intl.DateTimeFormat('de-DE', { weekday: 'short' });
+const dayMonthFormat = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' });
+
+/** „Mo“ */
+export const formatWeekdayShort = (iso: string) => weekdayShortFormat.format(parseIsoDate(iso)).replace('.', '');
+/** „21.09.“ */
+export const formatDayMonth = (iso: string) => dayMonthFormat.format(parseIsoDate(iso));

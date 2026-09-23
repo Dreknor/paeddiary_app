@@ -81,7 +81,14 @@ export function GradingTab({ view, header }: { view: StudentView; header: ReactE
             <View style={styles.timeline}>
               {data.stage_history.map((h) => (
                 <View key={h.id} style={styles.timelineItem}>
-                  <View style={styles.dot} />
+                  {h.stage_badge_url ? (
+                    <StageBadge
+                      stage={{ title: h.stage_title ?? '', symbol: null, badge_image_url: h.stage_badge_url }}
+                      size={28}
+                    />
+                  ) : (
+                    <View style={styles.dot} />
+                  )}
                   <View style={styles.flex}>
                     <Text style={styles.timelineTitle}>
                       {h.previous_stage_title ? `${h.previous_stage_title} → ` : ''}

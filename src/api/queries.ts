@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query';
 
 import { useAuth } from '@/auth/AuthContext';
 
@@ -11,13 +11,14 @@ import {
   fetchDiagnosticHistory,
   fetchDiaryCategories,
   fetchDiaryEntries,
+  fetchDiaryWeek,
   fetchDossier,
   fetchGradingHistory,
   fetchGradingSession,
   fetchStudentView,
   type DossierParams,
 } from './endpoints';
-import type { ClassStudent } from './types';
+import type { ClassStudent, WeekScope } from './types';
 
 export const queryKeys = {
   classes: ['classes'] as const,
@@ -32,6 +33,9 @@ export const queryKeys = {
   diagnosticHistory: (studentId: number) => ['students', studentId, 'diagnostic'] as const,
   dossier: (studentId: number, params: DossierParams) => ['students', studentId, 'dossier', params] as const,
   gradingSession: (sessionId: number) => ['grading-sessions', sessionId] as const,
+  diaryWeeks: ['diary-week'] as const,
+  diaryWeek: (scope: WeekScope, weekStart: string) =>
+    ['diary-week', 'classId' in scope ? `c${scope.classId}` : `g${scope.groupId}`, weekStart] as const,
   categories: ['diary-categories'] as const,
   diagnosticAreas: ['diagnostic-areas'] as const,
   devices: ['devices'] as const,
@@ -97,6 +101,15 @@ export function useDiaryEntries(studentId: number, categoryId: number | null) {
     initialPageParam: 1,
     getNextPageParam: (last) => (last.meta.current_page < last.meta.last_page ? last.meta.current_page + 1 : undefined),
     enabled: Number.isFinite(studentId),
+  });
+}
+
+/** Wochenansicht; `weekStart` muss der Montag sein (ein Cache-Eintrag pro Woche). */
+export function useDiaryWeek(scope: WeekScope, weekStart: string) {
+  return useQuery({
+    queryKey: queryKeys.diaryWeek(scope, weekStart),
+    queryFn: () => fetchDiaryWeek(scope, weekStart),
+    placeholderData: keepPreviousData,
   });
 }
 

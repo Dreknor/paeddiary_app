@@ -9,6 +9,7 @@ import type {
   DiagnosticHistory,
   DiaryCategory,
   DiaryEntry,
+  DiaryWeek,
   Dossier,
   GradingHistory,
   GradingSessionListItem,
@@ -21,6 +22,7 @@ import type {
   StudentSession,
   StudentView,
   TokenResponse,
+  WeekScope,
 } from './types';
 
 /**
@@ -92,6 +94,18 @@ export const fetchDiaryEntries = (
 
 export const fetchDiaryEntry = (id: number) =>
   api.get<{ data: DiaryEntry }>(`/paed-diary/entries/${id}`).then((r) => r.data);
+
+/** Wochenansicht (Kalender) einer Klasse bzw. Lerngruppe; `weekStart` = beliebiger Tag der Woche. */
+export const fetchDiaryWeek = (scope: WeekScope, weekStart: string) =>
+  api
+    .get<{ data: DiaryWeek }>('/paed-diary/week', {
+      query: {
+        class_id: 'classId' in scope ? scope.classId : undefined,
+        group_id: 'groupId' in scope ? scope.groupId : undefined,
+        week_start: weekStart,
+      },
+    })
+    .then((r) => r.data);
 
 // ---------------------------------------------------------------- Graduierung
 
