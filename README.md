@@ -8,6 +8,9 @@ Backend: Laravel-Projekt `mitarbeiter.local` (API v1.1, `resources/api-docs/open
 - [Backend-Aufgaben](docs/02-backend-aufgaben.md) – B1–B7 sind im Backend umgesetzt
 - [Regeln für KI-Agenten](AGENTS.md)
 
+## App-Kennung
+Bundle-ID (iOS) und Package (Android): `de.eszr.paeddiary` – nach dem ersten Store-Upload nicht mehr änderbar.
+
 ## Stack
 Expo SDK 57 (React Native 0.86, TypeScript) · Expo Router · TanStack Query (verschlüsselt persistiert) ·
 expo-secure-store · expo-local-authentication · expo-camera · expo-speech-recognition · EAS Build/Update
@@ -51,6 +54,5 @@ npx eas-cli@latest build --profile development --platform ios   # erst mit Apple
 Test-APK für Pilotgeräte: `--profile preview`. Store-Build: `--profile production`.
 
 ## Offene Punkte
-- Bundle-ID/Package `de.ezr.paeddiary` ist vorläufig – vor dem ersten Store-Upload festlegen.
 - Relution: Serveradresse per Managed App Configuration vorbelegen (benötigt natives Modul, noch nicht eingebaut).
 - Automatisierte Tests (Jest/Maestro) fehlen noch.

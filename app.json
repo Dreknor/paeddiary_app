@@ -9,13 +9,13 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "de.ezr.paeddiary",
+      "bundleIdentifier": "de.eszr.paeddiary",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "de.ezr.paeddiary",
+      "package": "de.eszr.paeddiary",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
