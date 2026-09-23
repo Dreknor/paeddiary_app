@@ -1,3 +1,38 @@
+# paedDiary-App – Projektregeln
+
+Mobile App (iOS/Android, Smartphone + iPad) für Pädagogisches Tagebuch, Diagnose und Graduierung.
+Fachliches Konzept: `docs/01-konzept.md`. Backend-Erweiterungen: `docs/02-backend-aufgaben.md`.
+
+## Backend
+- Laravel-Projekt unter `/var/www/mitarbeiter.local` (lokal: `http://mitarbeiter.local`). **Nicht in diesem Repo ändern.**
+- API-Vertrag: `/var/www/mitarbeiter.local/resources/api-docs/openapi-v1.yaml` – Typen in `src/api/types.ts` danach ausrichten.
+- Jede Schule hat einen eigenen Server; die App kennt keine feste URL (Serverwahl in `src/app/server.tsx`).
+
+## Architektur
+- `src/app/` – nur Routen (Expo Router). `(app)/` = angemeldeter Bereich, geschützt durch `Stack.Protected` + `AppLock`.
+- `src/api/client.ts` – einziger Weg zum Server (`api.get/post/put/del`). Setzt Token, Timeout, `Idempotency-Key`, deutsche Fehlermeldungen (`ApiError`).
+- `src/api/endpoints.ts` – ein Funktionsaufruf pro Endpunkt. `src/api/queries.ts` – TanStack-Query-Hooks + `queryKeys`.
+- `src/auth/` – Sitzung (SecureStore), SSO (PKCE über Backend, Aufgabe B2), App-Sperre.
+- `src/theme/` – Design-Tokens. Keine Farben/Abstände direkt im Code, immer `colors`, `spacing`, `font`, `radius`.
+- `src/api/mutations.ts` – alle schreibenden Aktionen; laufen über die Warteschlange `src/sync/outbox.ts`
+  (verschlüsselt gespeichert, Idempotency-Key = Auftrags-ID, automatisches Nachsenden).
+- `src/sync/queryPersistence.ts` – gelesene Daten verschlüsselt persistieren (`meta: { persist: false }` für sensible Einmal-Abfragen wie Dossier).
+- `src/lib/encryptedStore.ts` – AES-GCM-Dateiablage, Schlüssel im Keychain/Keystore.
+- `src/components/` – wiederverwendbare Bausteine (`ui.tsx`, `controls.tsx`, `ActionSheet`, `Toast`, Fachkomponenten je Modul).
+- `src/student/` + `src/app/schueler-modus/` – Schüler-iPad mit eigenem, eingeschränktem Token (nie mit Lehrer-Token mischen).
+
+## Regeln
+- Oberfläche komplett **Deutsch**, Du-Form, kurze Texte.
+- Server ist führend; lokal nur Cache. Schreibende Aufrufe immer über `api.*` (Idempotency-Key).
+- Keine Schülerdaten in Logs, Benachrichtigungen oder Crash-Reports.
+- Rechte aus `user.permissions` bzw. `StudentView.permissions` steuern die Sichtbarkeit – nichts anzeigen, was der Nutzer nicht darf.
+- Tippflächen ≥ `touchTarget` (48). Layouts müssen auf iPhone SE und iPad quer funktionieren (`useWindowDimensions`).
+- Android-`Alert` hat max. 3 Knöpfe → für mehr Optionen `showActionSheet` verwenden.
+- React-Compiler-Regeln beachten: kein `setState` synchron in Effekten, keine Ref-Zuweisung beim Rendern – Zustand ableiten.
+- Vor „fertig“: `npm run check` fehlerfrei und `npm run format`.
+
+---
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data

@@ -1,17 +1,23 @@
 {
   "expo": {
-    "name": "paeddiary",
+    "name": "Päd. Tagebuch",
     "slug": "paeddiary",
-    "version": "1.0.0",
-    "orientation": "portrait",
+    "version": "0.1.0",
+    "scheme": "paeddiary",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "de.ezr.paeddiary",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "de.ezr.paeddiary",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +26,39 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-image",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Face ID schützt die Schülerdaten in der App vor fremdem Zugriff."
+        }
+      ],
+      "expo-sharing",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Das Mikrofon wird für das Diktieren von Tagebucheinträgen verwendet.",
+          "speechRecognitionPermission": "Diktierte Einträge werden direkt auf dem Gerät in Text umgewandelt.",
+          "androidSpeechServicePackages": ["com.google.android.as", "com.google.android.googlequicksearchbox"]
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Die Kamera wird nur zum Scannen von QR-Codes (Schule verbinden, Schüler-Beitritt) verwendet.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
