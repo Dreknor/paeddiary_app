@@ -7,6 +7,7 @@ import { fetchDiaryEntry } from '@/api/endpoints';
 import { deleteDiaryEntry, updateDiaryEntry } from '@/api/mutations';
 import type { DiaryEntry } from '@/api/types';
 import { EntryForm } from '@/components/diary/EntryForm';
+import { EntryStudents } from '@/components/diary/EntryStudents';
 import { showToast } from '@/components/Toast';
 import { Button, ErrorBox, Loading } from '@/components/ui';
 import { formatDateTime } from '@/lib/dates';
@@ -102,7 +103,12 @@ export default function EditEntryScreen() {
           is_dossier_only: entry.is_dossier_only,
           is_completed: entry.is_completed,
         }}
-        header={meta}
+        header={
+          <>
+            {meta}
+            <EntryStudents entry={entry} />
+          </>
+        }
         submitLabel="Änderungen speichern"
         onSubmit={async (values) => {
           const result = await updateDiaryEntry(entry, values).catch(handleConflict);

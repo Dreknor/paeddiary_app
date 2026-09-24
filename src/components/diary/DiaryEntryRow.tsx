@@ -23,6 +23,11 @@ export function DiaryEntryRow({ entry, numberOfLines }: { entry: DiaryEntry; num
           {!entry.is_completed ? <Text style={[styles.tag, styles.openTag]}>offen</Text> : null}
           {entry.schueler_ids.length > 1 ? <Text style={styles.tag}>Gruppe ({entry.schueler_ids.length})</Text> : null}
         </View>
+        {entry.students?.length ? (
+          <Text style={styles.students} numberOfLines={2}>
+            {entry.students.map((s) => `${s.firstname} ${s.lastname_initial ?? ''}`.trim()).join(', ')}
+          </Text>
+        ) : null}
         <Text style={styles.text} numberOfLines={numberOfLines}>
           {entry.content}
         </Text>
@@ -72,6 +77,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, padding: spacing.md, gap: spacing.xs },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.xs },
   meta: { fontSize: font.size.xs, color: colors.textMuted, flexShrink: 1 },
+  students: { fontSize: font.size.sm, fontWeight: font.weight.semibold, color: colors.text },
   tag: {
     fontSize: font.size.xs,
     color: colors.primary,

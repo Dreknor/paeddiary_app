@@ -13,8 +13,14 @@ import type {
   GoalStatus,
   GradingAnswerInput,
   GradingSessionResponse,
+  Appointment,
+  AppointmentInput,
+  DiaryTask,
+  TaskInput,
   WeekEntry,
 } from './types';
+import { RESUBMISSION_REASON } from './types';
+import { addDays, parseIsoDate } from '@/lib/dates';
 
 /**
  * Alle schreibenden Aktionen laufen über die Warteschlange (`sendViaOutbox`):
@@ -257,6 +263,121 @@ export function closeTask(queryClient: QueryClient, weekKey: WeekKey, taskId: nu
     path: `/paed-diary/tasks/${taskId}/close`,
     label: 'Aufgabe erledigt',
     meta: { studentIds: [studentId] },
+  });
+}
+
+/**
+ * Wiedervorlage: Notiz an allen Schultagen von `from` bis zum Vortag von `resumeOn` ausblenden
+ * (`resumeOn = null` hebt auf). Ohne `studentId` für alle Schüler der Notiz.
+ */
+export function setResubmission(
+  queryClient: QueryClient,
+  weekKey: WeekKey,
+  entry: WeekEntry,
+  studentId: number | null,
+  from: string,
+  resumeOn: string | null,
+) {
+  const students = studentId ? [studentId] : entry.schueler_ids;
+  const dates: string[] = [];
+  for (let d = from; resumeOn && d < resumeOn; d = addDays(d, 1)) {
+    if (![0, 6].includes(parseIsoDate(d).getDay())) dates.push(d);
+  }
+  const isOld = (p: DiaryWeek['pauses'][number]) =>
+    p.entry_id === entry.id && students.includes(p.schueler_id) && p.date >= from && p.reason === RESUBMISSION_REASON;
+  return weekAction(
+    queryClient,
+    weekKey,
+    (week) => ({
+      ...week,
+      pauses: [
+        ...week.pauses.filter((p) => !isOld(p)),
+        ...dates.flatMap((date) =>
+          students.map((id) => ({ entry_id: entry.id, schueler_id: id, date, reason: RESUBMISSION_REASON })),
+        ),
+      ],
+    }),
+    {
+      method: 'PUT',
+      path: `/paed-diary/entries/${entry.id}/resubmission`,
+      body: { from, resume_on: resumeOn, schueler_id: studentId ?? undefined },
+      label: resumeOn ? 'Wiedervorlage' : 'Wiedervorlage aufheben',
+      meta: { studentIds: students, entryId: entry.id },
+    },
+  );
+}
+
+// ---------------------------------------------------------------- Aufgaben & Termine
+
+export function createTasks(students: { id: number; name: string }[], input: TaskInput) {
+  const ids = students.map((s) => s.id);
+  return sendViaOutbox<{ data: DiaryTask[] }>({
+    kind: 'diary',
+    method: 'POST',
+    path: '/paed-diary/tasks',
+    body: { schueler_ids: ids, ...input },
+    label: students.length === 1 ? `Aufgabe · ${students[0].name}` : `Aufgabe · ${students.length} Schüler`,
+    meta: { studentIds: ids },
+    invalidate: [queryKeys.diaryWeeks],
+  });
+}
+
+export function updateTask(taskId: number, input: TaskInput) {
+  return sendViaOutbox<{ data: DiaryTask }>({
+    kind: 'diary',
+    method: 'PUT',
+    path: `/paed-diary/tasks/${taskId}`,
+    body: input,
+    label: 'Aufgabe ändern',
+    invalidate: [queryKeys.diaryWeeks],
+  });
+}
+
+export function createAppointment(input: AppointmentInput) {
+  return sendViaOutbox<{ data: Appointment }>({
+    kind: 'diary',
+    method: 'POST',
+    path: '/paed-diary/appointments',
+    body: input,
+    label: `Termin · ${input.title}`,
+    meta: { studentIds: input.schueler_ids },
+    invalidate: [queryKeys.diaryWeeks],
+  });
+}
+
+export function updateAppointment(id: number, input: AppointmentInput) {
+  return sendViaOutbox<{ data: Appointment }>({
+    kind: 'diary',
+    method: 'PUT',
+    path: `/paed-diary/appointments/${id}`,
+    body: input,
+    label: `Termin ändern · ${input.title}`,
+    meta: { studentIds: input.schueler_ids },
+    invalidate: [queryKeys.diaryWeeks],
+  });
+}
+
+/** Termin löschen: ganz oder (Serie) nur ein Vorkommen bzw. ab einem Vorkommen. */
+export function deleteAppointment(id: number, mode: 'all' | 'only_this' | 'this_and_future' = 'all', date?: string) {
+  const query = mode === 'all' ? '' : `?mode=${mode}&date=${date}`;
+  return sendViaOutbox<void>({
+    kind: 'diary',
+    method: 'DELETE',
+    path: `/paed-diary/appointments/${id}${query}`,
+    label: 'Termin löschen',
+    invalidate: [queryKeys.diaryWeeks],
+  });
+}
+
+/** Schüler zu einem Eintrag hinzufügen bzw. daraus entfernen (nur Schüler der Klasse des Eintrags). */
+export function setEntryStudent(entry: DiaryEntry, studentId: number, attached: boolean) {
+  return sendViaOutbox<{ data: { entry_id: number; schueler_ids: number[]; updated_at: string } }>({
+    kind: 'diary',
+    method: attached ? 'PUT' : 'DELETE',
+    path: `/paed-diary/entries/${entry.id}/students/${studentId}`,
+    label: attached ? 'Schüler hinzufügen' : 'Schüler entfernen',
+    meta: { studentIds: [studentId], entryId: entry.id },
+    invalidate: [...studentKeys([...entry.schueler_ids, studentId]), queryKeys.diaryWeeks, ['diary-entry', entry.id]],
   });
 }
 

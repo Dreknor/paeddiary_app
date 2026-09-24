@@ -142,11 +142,17 @@ export function DayBanner({
         </Pressable>
       )}
       {appointments.map((a) => (
-        <View key={a.id} style={styles.appointment}>
+        <Pressable
+          key={a.id}
+          onPress={() => actions.appointmentMenu(a)}
+          style={({ pressed }) => [styles.appointment, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Termin ${appointmentLabel(a)}`}
+        >
           <Text style={styles.appointmentText} numberOfLines={compact ? 2 : 3}>
             {appointmentLabel(a)}
           </Text>
-        </View>
+        </Pressable>
       ))}
     </View>
   );
@@ -210,10 +216,17 @@ export function StudentHead({
       </View>
       {tasks.map((t) => (
         <View key={t.id} style={[styles.task, t.highlighted && styles.taskHighlighted]}>
-          <Text style={[styles.taskText, t.highlighted && styles.taskTextHighlighted]} numberOfLines={3}>
-            {t.title}
-            {t.due_date ? ` (bis ${formatDayMonth(t.due_date)})` : ''}
-          </Text>
+          <Pressable
+            onPress={() => actions.taskMenu(t, student)}
+            style={styles.taskBody}
+            accessibilityRole="button"
+            accessibilityLabel={`Aufgabe ${t.title}`}
+          >
+            <Text style={[styles.taskText, t.highlighted && styles.taskTextHighlighted]} numberOfLines={3}>
+              {t.title}
+              {t.due_date ? ` (bis ${formatDayMonth(t.due_date)})` : ''}
+            </Text>
+          </Pressable>
           <Pressable
             onPress={() =>
               Alert.alert('Aufgabe erledigt?', t.title, [
@@ -318,7 +331,8 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.sm,
   },
   taskHighlighted: { backgroundColor: colors.dangerSoft },
-  taskText: { flex: 1, fontSize: font.size.xs, color: colors.success, paddingVertical: spacing.xs },
+  taskBody: { flex: 1, minHeight: 40, justifyContent: 'center' },
+  taskText: { fontSize: font.size.xs, color: colors.success, paddingVertical: spacing.xs },
   taskTextHighlighted: { color: colors.danger, fontWeight: font.weight.semibold },
   taskDone: { width: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
   taskDoneText: { color: colors.success, fontWeight: font.weight.bold, fontSize: font.size.md },

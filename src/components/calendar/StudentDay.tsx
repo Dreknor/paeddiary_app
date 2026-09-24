@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import type { WeekEntry, WeekStudent } from '@/api/types';
+import { RESUBMISSION_REASON, type WeekEntry, type WeekStudent } from '@/api/types';
 import { SwipeRow } from '@/components/SwipeRow';
+import { formatDayMonth } from '@/lib/dates';
 import { colors, font, radius, spacing } from '@/theme';
 
 import type { WeekActions } from './useWeekActions';
@@ -35,11 +36,17 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
   return (
     <View style={styles.wrap}>
       {appointments.map((a) => (
-        <View key={`apt-${a.id}`} style={styles.appointment}>
+        <Pressable
+          key={`apt-${a.id}`}
+          onPress={() => actions.appointmentMenu(a)}
+          style={({ pressed }) => [styles.appointment, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Termin ${appointmentLabel(a)}`}
+        >
           <Text style={styles.appointmentText} numberOfLines={2}>
             {appointmentLabel(a)}
           </Text>
-        </View>
+        </Pressable>
       ))}
 
       {entries.map((e) => (
@@ -66,16 +73,30 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
         </SwipeRow>
       ))}
 
-      {paused.map((e) => (
-        <SwipeRow
-          key={`p-${e.id}`}
-          right={
-            !compact ? { label: 'Wieder anzeigen', onSwipe: () => actions.pause(e, student, date, false) } : undefined
-          }
-        >
-          <EntryRow entry={e} compact={compact} paused onPress={() => actions.entryMenu(e, student, date, true)} />
-        </SwipeRow>
-      ))}
+      {paused.map((e) => {
+        const resubmitted = index.pauseReason(e.id, student.id, date) === RESUBMISSION_REASON;
+        const until = resubmitted ? index.resubmissionEnd(e.id, student.id, date) : null;
+        return (
+          <SwipeRow
+            key={`p-${e.id}`}
+            right={
+              compact
+                ? undefined
+                : resubmitted
+                  ? { label: 'Wiedervorlage aufheben', onSwipe: () => actions.resubmit(e, student, date, null) }
+                  : { label: 'Wieder anzeigen', onSwipe: () => actions.pause(e, student, date, false) }
+            }
+          >
+            <EntryRow
+              entry={e}
+              compact={compact}
+              paused
+              pauseLabel={resubmitted ? `Wiedervorlage${until ? ` bis ${formatDayMonth(until)}` : ''}` : undefined}
+              onPress={() => actions.entryMenu(e, student, date, true, resubmitted)}
+            />
+          </SwipeRow>
+        );
+      })}
 
       {columns.length ? (
         <View style={styles.columns}>
@@ -117,12 +138,14 @@ function EntryRow({
   entry,
   compact,
   paused,
+  pauseLabel,
   onPress,
   onComplete,
 }: {
   entry: WeekEntry;
   compact?: boolean;
   paused?: boolean;
+  pauseLabel?: string;
   onPress: () => void;
   onComplete?: () => void;
 }) {
@@ -133,7 +156,7 @@ function EntryRow({
         onPress={onPress}
         style={({ pressed }) => [styles.entryBody, pressed && styles.pressed]}
         accessibilityRole="button"
-        accessibilityLabel={`${open ? 'Offene Notiz' : 'Eintrag'}${paused ? ', pausiert' : ''}: ${entry.content}`}
+        accessibilityLabel={`${open ? 'Offene Notiz' : 'Eintrag'}${paused ? `, ${pauseLabel ?? 'pausiert'}` : ''}: ${entry.content}`}
       >
         <View style={styles.entryMeta}>
           {entry.category_name ? (
@@ -144,7 +167,7 @@ function EntryRow({
               </Text>
             </>
           ) : null}
-          {paused ? <Text style={styles.badge}>⏸ pausiert</Text> : null}
+          {paused ? <Text style={styles.badge}>⏸ {pauseLabel ?? 'pausiert'}</Text> : null}
           {!entry.is_own && entry.created_by_name && !compact ? (
             <Text style={styles.author} numberOfLines={1}>
               {entry.created_by_name}

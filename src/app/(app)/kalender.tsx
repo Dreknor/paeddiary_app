@@ -64,6 +64,7 @@ export default function CalendarScreen() {
       />
       <View style={styles.filters}>
         <Chip label="Pausierte zeigen" selected={showPaused} onPress={() => setShowPaused((v) => !v)} />
+        <Chip label="+ Termin" onPress={() => actions.newAppointment([], useGrid ? today : selectedDate)} />
         {index && weekStart <= today ? (
           <Chip
             label={`Ohne Eintrag (${unobserved.length})`}
@@ -256,6 +257,14 @@ function StudentCard({
             </Pressable>
           </>
         ) : null}
+        <Pressable
+          onPress={() => actions.cellMenu(student, date, absent)}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Weitere Aktionen für ${student.firstname}`}
+        >
+          <Text style={styles.actionText}>Mehr …</Text>
+        </Pressable>
         <Pressable
           onPress={() => actions.toggleAbsence(student, date, !absent)}
           style={({ pressed }) => [styles.action, absent && styles.actionAbsent, pressed && styles.pressed]}

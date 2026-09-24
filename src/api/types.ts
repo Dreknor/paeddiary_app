@@ -101,6 +101,8 @@ export type DiaryEntry = {
   is_own: boolean;
   created_at: string;
   updated_at: string;
+  /** Nur im Klassen-Feed: Schüler des Eintrags (Vorname + Initial). */
+  students?: { id: number; firstname: string; lastname_initial: string | null }[];
 };
 
 export type DevelopmentGoal = {
@@ -155,7 +157,15 @@ export type DiaryCategory = {
 export type Paginated<T> = {
   data: T[];
   links: { next: string | null; prev: string | null };
-  meta: { current_page: number; last_page: number; per_page: number; total: number };
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    /** Nur bei Volltextsuche: verwendete Suchwörter bzw. ob ältere Einträge nicht durchsucht wurden. */
+    search_terms?: string[];
+    search_truncated?: boolean;
+  };
 };
 
 export type DiaryEntryInput = {
@@ -453,9 +463,21 @@ export type WeekAppointment = {
   start_time: string | null;
   end_time: string | null;
   is_recurring: boolean;
+  recurring_type?: 'daily' | 'weekly' | 'monthly' | null;
+  pause_entries?: boolean;
+  /** Selbst angelegt. */
+  is_own?: boolean;
   class_ids: number[];
   group_ids: number[];
   schueler_ids: number[];
+};
+
+export type WeekPause = {
+  entry_id: number;
+  schueler_id: number;
+  date: string;
+  /** z. B. „Ferien“, „Termin“, „Wiedervorlage“; null = einzeln pausiert. */
+  reason?: string | null;
 };
 
 export type DiaryWeek = {
@@ -466,7 +488,7 @@ export type DiaryWeek = {
   days: { date: string; is_holiday: boolean; holiday_name: string | null }[];
   students: WeekStudent[];
   entries: WeekEntry[];
-  pauses: { entry_id: number; schueler_id: number; date: string }[];
+  pauses: WeekPause[];
   absences: { schueler_id: number; date: string }[];
   day_pauses: { class_id: number; date: string; reason: string }[];
   columns: { id: number; class_id: number; name: string; type: WeekColumnType; category: string | null }[];
@@ -485,3 +507,90 @@ export type DiaryWeek = {
 
 /** Klasse oder Lerngruppe, für die die Wochenansicht geladen wird. */
 export type WeekScope = { classId: number } | { groupId: number };
+
+/** Grund der Pausen, die eine Wiedervorlage anlegt. */
+export const RESUBMISSION_REASON = 'Wiedervorlage';
+
+// ---------------------------------------------------------------- Planung (Aufgaben, Termine)
+
+export type DiaryTask = {
+  id: number;
+  schueler_id: number;
+  klasse_id: number;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  highlighted: boolean;
+  status: 'open' | 'closed';
+};
+
+export type TaskInput = {
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  highlighted: boolean;
+};
+
+export type AppointmentInput = {
+  title: string;
+  description: string | null;
+  start_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  is_recurring: boolean;
+  recurring_type: 'daily' | 'weekly' | 'monthly' | null;
+  pause_entries: boolean;
+  class_ids: number[];
+  group_ids: number[];
+  schueler_ids: number[];
+};
+
+export type Appointment = AppointmentInput & {
+  id: number;
+  recurring_interval: number;
+  recurring_end_date: string | null;
+  is_own: boolean;
+};
+
+// ---------------------------------------------------------------- Klassenübersichten
+
+export type StudentBrief = { id: number; firstname: string; lastname: string };
+
+export type GradingOverview = {
+  class: { id: number; name: string };
+  grading_system: { id: number; name: string } | null;
+  students_total: number;
+  open_sessions_count: number;
+  stages: {
+    id: number;
+    title: string;
+    level: number;
+    symbol: string | null;
+    badge_image_url: string | null;
+    count: number;
+    students: StudentBrief[];
+  }[];
+  other_stages: (StudentBrief & { stage_title: string })[];
+  without_stage: StudentBrief[];
+};
+
+export type DiagnosticCriterionOverview = {
+  criterion_id: number;
+  code: string;
+  description: string;
+  stage_id: number | null;
+  stage_title: string | null;
+  area_id: number | null;
+  area_title: string | null;
+  counts: { white: number; gray: number; dark_gray: number; assessed: number };
+  students_not_yet: (StudentBrief & { assessed_on: string | null })[];
+  students_partial: (StudentBrief & { assessed_on: string | null })[];
+};
+
+export type DiagnosticClassOverview = {
+  class: { id: number; name: string };
+  students_total: number;
+  assessed_students: number;
+  areas: { id: number; title: string }[];
+  criteria: DiagnosticCriterionOverview[];
+};

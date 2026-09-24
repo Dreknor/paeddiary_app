@@ -1,4 +1,10 @@
-import type { DiaryWeek, WeekAppointment, WeekEntry, WeekStudent } from '@/api/types';
+import {
+  RESUBMISSION_REASON,
+  type DiaryWeek,
+  type WeekAppointment,
+  type WeekEntry,
+  type WeekStudent,
+} from '@/api/types';
 
 /**
  * Auswertung der Wochendaten – gleiche Regeln wie die Web-Wochenansicht:
@@ -8,7 +14,7 @@ import type { DiaryWeek, WeekAppointment, WeekEntry, WeekStudent } from '@/api/t
  * - Einträge ausgeblendeter Kategorien werden nicht angezeigt.
  */
 export class WeekIndex {
-  private pauses = new Set<string>();
+  private pauses = new Map<string, string | null>();
   private absences = new Set<string>();
   private values = new Map<string, string | null>();
   private hidden: Set<number>;
@@ -16,7 +22,7 @@ export class WeekIndex {
   private observed = new Set<number>();
 
   constructor(readonly week: DiaryWeek) {
-    week.pauses.forEach((p) => this.pauses.add(`${p.entry_id}|${p.schueler_id}|${p.date}`));
+    week.pauses.forEach((p) => this.pauses.set(`${p.entry_id}|${p.schueler_id}|${p.date}`, p.reason ?? null));
     week.absences.forEach((a) => this.absences.add(`${a.schueler_id}|${a.date}`));
     week.column_values.forEach((v) => this.values.set(`${v.column_id}|${v.schueler_id}|${v.date}`, v.value));
     this.hidden = new Set(week.hidden_category_ids);
@@ -36,6 +42,21 @@ export class WeekIndex {
 
   isPaused(entryId: number, studentId: number, date: string) {
     return this.pauses.has(`${entryId}|${studentId}|${date}`);
+  }
+
+  /** Grund der Pause (z. B. „Wiedervorlage“) oder null. */
+  pauseReason(entryId: number, studentId: number, date: string) {
+    return this.pauses.get(`${entryId}|${studentId}|${date}`) ?? null;
+  }
+
+  /** Letzter Tag der zusammenhängenden Wiedervorlage ab `date` innerhalb dieser Woche. */
+  resubmissionEnd(entryId: number, studentId: number, date: string) {
+    let last: string | null = null;
+    for (const d of this.week.days.map((x) => x.date).filter((x) => x >= date)) {
+      if (this.pauseReason(entryId, studentId, d) !== RESUBMISSION_REASON) break;
+      last = d;
+    }
+    return last;
   }
 
   isAbsent(studentId: number, date: string) {

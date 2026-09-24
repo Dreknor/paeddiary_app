@@ -6,12 +6,14 @@ import type {
   CurrentUser,
   Device,
   DiagnosticArea,
+  DiagnosticClassOverview,
   DiagnosticHistory,
   DiaryCategory,
   DiaryEntry,
   DiaryWeek,
   Dossier,
   GradingHistory,
+  GradingOverview,
   GradingSessionListItem,
   GradingSessionResponse,
   GradingStage,
@@ -87,10 +89,30 @@ export const deleteDevice = (id: number) => api.del<void>(`/auth/devices/${id}`)
 export const fetchDiaryCategories = () =>
   api.get<{ data: DiaryCategory[] }>('/paed-diary/categories').then((r) => r.data);
 
-export const fetchDiaryEntries = (
-  studentId: number,
-  params: { page?: number; per_page?: number; category_id?: number | null; from_date?: string; to_date?: string },
-) => api.get<Paginated<DiaryEntry>>(`/students/${studentId}/paed-diary/entries`, { query: params });
+export type DiaryListParams = {
+  page?: number;
+  per_page?: number;
+  category_id?: number | null;
+  from_date?: string;
+  to_date?: string;
+  /** Volltextsuche (Server entschlüsselt und durchsucht). */
+  search?: string;
+};
+
+export const fetchDiaryEntries = (studentId: number, params: DiaryListParams) =>
+  api.get<Paginated<DiaryEntry>>(`/students/${studentId}/paed-diary/entries`, { query: params });
+
+/** Klassen-Feed: Einträge aller Kolleg*innen zu den Schülern einer Klasse (Standard: letzte 14 Tage). */
+export const fetchClassFeed = (classId: number, params: DiaryListParams & { author?: 'all' | 'own' | 'others' }) =>
+  api.get<Paginated<DiaryEntry>>(`/classes/${classId}/paed-diary/entries`, { query: params });
+
+export const fetchGradingOverview = (classId: number) =>
+  api.get<{ data: GradingOverview }>(`/classes/${classId}/grading/overview`).then((r) => r.data);
+
+export const fetchDiagnosticOverview = (classId: number, params: { area_id?: number; min_count?: number }) =>
+  api
+    .get<{ data: DiagnosticClassOverview }>(`/classes/${classId}/diagnostic/overview`, { query: params })
+    .then((r) => r.data);
 
 export const fetchDiaryEntry = (id: number) =>
   api.get<{ data: DiaryEntry }>(`/paed-diary/entries/${id}`).then((r) => r.data);
