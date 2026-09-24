@@ -6,7 +6,7 @@ import type { DiaryWeek, WeekEntry, WeekStudent } from '@/api/types';
 import { showActionSheet } from '@/components/ActionSheet';
 import { showToast } from '@/components/Toast';
 import { formatRelativeDay } from '@/lib/dates';
-import { openNewEntry } from '@/lib/navigation';
+import { openNewEntry, openNewNote } from '@/lib/navigation';
 import type { SendResult } from '@/sync/outbox';
 
 const DAY_PAUSE_REASONS = ['Veranstaltung', 'Wandertag', 'Exkursion', 'Projekttag', 'Klassenfahrt'];
@@ -45,6 +45,8 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
 
   const newEntry = (students: WeekStudent[], date: string) => openNewEntry(students, classIds, date);
 
+  const newNote = (students: WeekStudent[], date: string) => openNewNote(students, classIds, date);
+
   const openEntry = (entry: WeekEntry) => router.push({ pathname: '/eintrag/[id]', params: { id: String(entry.id) } });
 
   /** Menü für einen Eintrag in einer Zelle. */
@@ -81,7 +83,8 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     showActionSheet({
       title: `${student.firstname} · ${formatRelativeDay(date)}`,
       options: [
-        { label: 'Neue Notiz', onPress: () => newEntry([student], date) },
+        { label: 'Neue Notiz', onPress: () => newNote([student], date) },
+        { label: 'Neuer Eintrag', onPress: () => newEntry([student], date) },
         absent
           ? { label: 'Abwesenheit aufheben', onPress: () => toggleAbsence(student, date, false) }
           : { label: 'Als abwesend markieren', onPress: () => toggleAbsence(student, date, true) },
@@ -114,7 +117,18 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     });
   }
 
-  return { complete, pause, toggleAbsence, setColumn, finishTask, newEntry, entryMenu, cellMenu, dayPauseMenu };
+  return {
+    complete,
+    pause,
+    toggleAbsence,
+    setColumn,
+    finishTask,
+    newEntry,
+    newNote,
+    entryMenu,
+    cellMenu,
+    dayPauseMenu,
+  };
 }
 
 export type WeekActions = ReturnType<typeof useWeekActions>;

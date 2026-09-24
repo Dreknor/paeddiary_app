@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { useStudentsOfClasses } from '@/api/queries';
 import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid } from '@/components/StudentGrid';
-import { openNewEntry, openWeek } from '@/lib/navigation';
+import { openNewEntry, openNewNote, openWeek } from '@/lib/navigation';
 import { parseIdList } from '@/lib/params';
 
 /**
@@ -32,7 +32,10 @@ export default function LearningGroupScreen() {
         isRefetching={isRefetching}
         error={error}
         onRefresh={refetch}
-        selectionActions={[{ label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, ids) }]}
+        selectionActions={[
+          { label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, ids) },
+          { label: 'Notiz', onPress: (selected) => openNewNote(selected, ids) },
+        ]}
       />
       <Fab label="Eintrag" onPress={() => openNewEntry([], ids)} />
     </View>

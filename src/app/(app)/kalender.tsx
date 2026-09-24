@@ -212,14 +212,24 @@ function StudentCard({
       <StudentDay index={index} student={student} date={date} actions={actions} showPaused={showPaused} />
       <View style={styles.cardActions}>
         {!absent ? (
-          <Pressable
-            onPress={() => actions.newEntry([student], date)}
-            style={({ pressed }) => [styles.action, pressed && styles.pressed]}
-            accessibilityRole="button"
-            accessibilityLabel={`Neue Notiz für ${student.firstname}`}
-          >
-            <Text style={styles.actionText}>+ Notiz</Text>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={() => actions.newNote([student], date)}
+              style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Neue Notiz für ${student.firstname}`}
+            >
+              <Text style={styles.actionText}>+ Notiz</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => actions.newEntry([student], date)}
+              style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Neuer Eintrag für ${student.firstname}`}
+            >
+              <Text style={styles.actionText}>+ Eintrag</Text>
+            </Pressable>
+          </>
         ) : null}
         <Pressable
           onPress={() => actions.toggleAbsence(student, date, !absent)}

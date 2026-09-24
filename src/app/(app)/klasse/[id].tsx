@@ -6,7 +6,7 @@ import type { ClassStudent } from '@/api/types';
 import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid, type SelectionAction } from '@/components/StudentGrid';
 import { formatDate } from '@/lib/dates';
-import { openNewEntry, openWeek } from '@/lib/navigation';
+import { openNewEntry, openNewNote, openWeek } from '@/lib/navigation';
 import { colors, font, radius, shadow, spacing } from '@/theme';
 
 export default function ClassScreen() {
@@ -21,6 +21,7 @@ export default function ClassScreen() {
 
   const actions: SelectionAction[] = [
     { label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, [classId]) },
+    { label: 'Notiz', onPress: (selected) => openNewNote(selected, [classId]) },
     ...(hasGrading
       ? [
           {
