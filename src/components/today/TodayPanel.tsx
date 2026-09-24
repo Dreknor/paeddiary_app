@@ -17,7 +17,7 @@ export type TodayTarget = { key: string; scope: WeekScope; name: string; color: 
 
 type TargetToday = { target: TodayTarget; notes: Item[]; tasks: Item[]; appointments: Item[] };
 
-/** Was heute ansteht: Termine, eigene offene Notizen und fällige Aufgaben je Klasse/Lerngruppe. */
+/** Was heute ansteht: Termine, eigene offene Einträge und fällige Aufgaben je Klasse/Lerngruppe. */
 export function TodayPanel({
   targets,
   hint,
@@ -55,7 +55,7 @@ export function TodayPanel({
       ) : null}
       {targets.length > 0 && loading && !perTarget.length ? <Text style={styles.muted}>Lädt …</Text> : null}
       {targets.length > 0 && !loading && !perTarget.length ? (
-        <Text style={styles.muted}>Keine Termine, offenen Notizen oder Aufgaben.</Text>
+        <Text style={styles.muted}>Keine Termine, offenen Einträge oder Aufgaben.</Text>
       ) : null}
       {perTarget.map((c) => (
         <Pressable
@@ -71,7 +71,7 @@ export function TodayPanel({
             <Text style={styles.open}>Woche ›</Text>
           </View>
           <Section label="Termine" items={c.appointments} />
-          <Section label="Meine offenen Notizen" items={c.notes} />
+          <Section label="Meine offenen Einträge" items={c.notes} />
           <Section label="Aufgaben" items={c.tasks} />
         </Pressable>
       ))}
@@ -114,7 +114,7 @@ function summarize(target: TodayTarget, week: DiaryWeek, day: string): TargetTod
     : week.entries
         .filter((e) => e.is_own && !e.is_completed && e.entry_date <= day)
         .map((e) => {
-          // Nur Schüler, bei denen die Notiz heute auch erscheint (nicht pausiert/abwesend).
+          // Nur Schüler, bei denen der Eintrag heute auch erscheint (nicht pausiert/abwesend).
           const names = e.schueler_ids
             .filter((id) => !index.isAbsent(id, day) && index.entriesForCell(id, day).some((x) => x.id === e.id))
             .map(name)

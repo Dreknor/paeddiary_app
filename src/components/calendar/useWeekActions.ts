@@ -15,14 +15,7 @@ import type { DiaryWeek, WeekAppointment, WeekEntry, WeekStudent } from '@/api/t
 import { showActionSheet } from '@/components/ActionSheet';
 import { showToast } from '@/components/Toast';
 import { addDays, formatDayMonth, formatRelativeDay, nextSchoolDayIso, shiftSchoolDay } from '@/lib/dates';
-import {
-  openEditAppointment,
-  openEditTask,
-  openNewAppointment,
-  openNewEntry,
-  openNewNote,
-  openNewTask,
-} from '@/lib/navigation';
+import { openEditAppointment, openEditTask, openNewAppointment, openNewEntry, openNewTask } from '@/lib/navigation';
 import type { SendResult } from '@/sync/outbox';
 
 const DAY_PAUSE_REASONS = ['Veranstaltung', 'Wandertag', 'Exkursion', 'Projekttag', 'Klassenfahrt'];
@@ -45,7 +38,7 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
   }
 
   const complete = (entry: WeekEntry, student: WeekStudent, date: string) =>
-    run(completeWeekEntry(queryClient, weekKey, entry, student.id, date), 'Notiz abgeschlossen');
+    run(completeWeekEntry(queryClient, weekKey, entry, student.id, date), 'Eintrag abgeschlossen');
 
   const pause = (entry: WeekEntry, student: WeekStudent, date: string, paused: boolean) =>
     run(setEntryPause(queryClient, weekKey, entry.id, student.id, date, paused));
@@ -60,8 +53,6 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     run(closeTask(queryClient, weekKey, taskId, student.id), 'Aufgabe erledigt');
 
   const newEntry = (students: WeekStudent[], date: string) => openNewEntry(students, classIds, date);
-
-  const newNote = (students: WeekStudent[], date: string) => openNewNote(students, classIds, date);
 
   const groupId = 'group_id' in scope ? scope.group_id : null;
   const newTask = (students: WeekStudent[]) => openNewTask(students, classIds);
@@ -85,7 +76,7 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     ].filter((p, i, all) => all.findIndex((x) => x.value === p.value) === i);
     showActionSheet({
       title: 'Wieder anzeigen ab …',
-      message: `Bis dahin ist die Notiz${entry.schueler_ids.length > 1 ? ` für ${student.firstname}` : ''} ausgeblendet.`,
+      message: `Bis dahin ist der Eintrag${entry.schueler_ids.length > 1 ? ` für ${student.firstname}` : ''} ausgeblendet.`,
       options: presets.map((p) => ({ label: p.label, onPress: () => resubmit(entry, student, date, p.value) })),
     });
   }
@@ -135,7 +126,7 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     const others = entry.schueler_ids.length - 1;
     showActionSheet({
       title: entry.content.slice(0, 80),
-      message: others > 0 ? `Offene Notiz für ${student.firstname} und ${others} weitere` : 'Offene Notiz',
+      message: others > 0 ? `Offener Eintrag für ${student.firstname} und ${others} weitere` : 'Offener Eintrag',
       options: paused
         ? [
             resubmitted
@@ -166,7 +157,6 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     showActionSheet({
       title: `${student.firstname} · ${formatRelativeDay(date)}`,
       options: [
-        { label: 'Neue Notiz', onPress: () => newNote([student], date) },
         { label: 'Neuer Eintrag', onPress: () => newEntry([student], date) },
         { label: 'Neue Aufgabe', onPress: () => newTask([student]) },
         { label: 'Neuer Termin', onPress: () => newAppointment([student], date) },
@@ -182,7 +172,7 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     if (currentReason) {
       showActionSheet({
         title: `Tagespause ${formatRelativeDay(date)}: ${currentReason}`,
-        message: 'Offene Notizen werden an diesem Tag wieder angezeigt.',
+        message: 'Offene Einträge werden an diesem Tag wieder angezeigt.',
         options: [
           {
             label: 'Tagespause aufheben',
@@ -194,7 +184,7 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     }
     showActionSheet({
       title: `${formatRelativeDay(date)} pausieren`,
-      message: 'Alle offenen Notizen werden an diesem Tag ausgeblendet. Grund:',
+      message: 'Alle offenen Einträge werden an diesem Tag ausgeblendet. Grund:',
       options: DAY_PAUSE_REASONS.map((reason) => ({
         label: reason,
         onPress: () => run(setDayPause(queryClient, weekKey, scope, classIds, date, true, reason), 'Tag pausiert'),
@@ -209,7 +199,6 @@ export function useWeekActions(weekKey: readonly unknown[], week: DiaryWeek | un
     setColumn,
     finishTask,
     newEntry,
-    newNote,
     newTask,
     newAppointment,
     resubmit,

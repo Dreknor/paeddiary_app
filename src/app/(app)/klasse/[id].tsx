@@ -6,7 +6,7 @@ import { useAuth } from '@/auth/AuthContext';
 import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid, type SelectionAction } from '@/components/StudentGrid';
 import { formatDate } from '@/lib/dates';
-import { openNewEntry, openNewNote, openWeek, showClassMenu, showSelectionMenu } from '@/lib/navigation';
+import { openNewEntry, openNewTask, openWeek, showClassMenu, showSelectionMenu } from '@/lib/navigation';
 import { colors, font, radius, shadow, spacing } from '@/theme';
 
 export default function ClassScreen() {
@@ -22,7 +22,7 @@ export default function ClassScreen() {
 
   const actions: SelectionAction[] = [
     { label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, [classId]) },
-    { label: 'Notiz', onPress: (selected) => openNewNote(selected, [classId]) },
+    { label: 'Aufgabe', onPress: (selected) => openNewTask(selected, [classId]) },
     {
       label: 'Mehr …',
       onPress: (selected) =>

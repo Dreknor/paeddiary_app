@@ -85,7 +85,7 @@ export function WeekGrid({
                   onPress={() => actions.cellMenu(s, d.date, absent)}
                   style={[styles.cell, (d.is_holiday || index.dayPause(d.date, s.class_id)) && styles.muted]}
                   accessibilityRole="button"
-                  accessibilityLabel={`${s.firstname} ${formatWeekdayShort(d.date)} ${formatDayMonth(d.date)} – Notiz oder Abwesenheit`}
+                  accessibilityLabel={`${s.firstname} ${formatWeekdayShort(d.date)} ${formatDayMonth(d.date)} – Eintrag, Aufgabe, Termin oder Abwesenheit`}
                 >
                   <StudentDay
                     index={index}

@@ -6,7 +6,7 @@ import { useClasses, useStudentsOfClasses } from '@/api/queries';
 import { useAuth } from '@/auth/AuthContext';
 import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid } from '@/components/StudentGrid';
-import { openNewEntry, openNewNote, openWeek, showClassMenu, showSelectionMenu } from '@/lib/navigation';
+import { openNewEntry, openNewTask, openWeek, showClassMenu, showSelectionMenu } from '@/lib/navigation';
 import { parseIdList } from '@/lib/params';
 import { spacing } from '@/theme';
 
@@ -57,7 +57,7 @@ export default function LearningGroupScreen() {
         fab={<Fab label="Eintrag" onPress={() => openNewEntry([], ids)} />}
         selectionActions={[
           { label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, ids) },
-          { label: 'Notiz', onPress: (selected) => openNewNote(selected, ids) },
+          { label: 'Aufgabe', onPress: (selected) => openNewTask(selected, ids) },
           {
             label: 'Mehr …',
             onPress: (selected) => showSelectionMenu(selected, { classIds: ids, groupId: Number(id) }),

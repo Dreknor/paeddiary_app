@@ -134,7 +134,7 @@ export function completeWeekEntry(
       method: 'POST',
       path: `/paed-diary/entries/${entry.id}/complete`,
       body: { date, schueler_id: onlyThisStudent ? studentId : undefined },
-      label: 'Notiz abschließen',
+      label: 'Eintrag abschließen',
       meta: { studentIds: [studentId], entryId: entry.id },
       invalidate: [queryKeys.student(studentId)],
     },
@@ -165,7 +165,7 @@ export function setEntryPause(
       method: 'PUT',
       path: `/paed-diary/entries/${entryId}/pause`,
       body: { schueler_id: studentId, date, paused },
-      label: paused ? 'Notiz pausieren' : 'Notiz fortsetzen',
+      label: paused ? 'Eintrag pausieren' : 'Eintrag fortsetzen',
       meta: { studentIds: [studentId], entryId },
     },
   );

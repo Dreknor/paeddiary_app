@@ -3,19 +3,17 @@ import { router } from 'expo-router';
 import { showActionSheet } from '@/components/ActionSheet';
 
 import type { ClassStudent, DiaryWeek, WeekAppointment } from '@/api/types';
-import type { EntryKind } from '@/components/diary/EntryForm';
 
 import { shortName } from './params';
 
 /**
- * Formular „Neuer Eintrag“ bzw. „Neue Notiz“ für die übergebenen Schüler öffnen (leer = Auswahl im Formular).
+ * Formular „Neuer Eintrag“ für die übergebenen Schüler öffnen (leer = Auswahl im Formular).
  * Optional mit vorbelegtem Datum (z. B. aus der Wochenansicht).
  */
 export const openNewEntry = (
   students: Pick<ClassStudent, 'id' | 'firstname' | 'lastname'>[],
   classIds: number[],
   date?: string,
-  kind: EntryKind = 'eintrag',
 ) =>
   router.push({
     pathname: '/eintrag/neu',
@@ -24,16 +22,8 @@ export const openNewEntry = (
       names: students.map((s) => shortName(s.firstname, s.lastname)).join('|'),
       classIds: classIds.join(','),
       ...(date ? { date } : {}),
-      art: kind,
     },
   });
-
-/** Neue offene Notiz – Kurzform von `openNewEntry`. */
-export const openNewNote = (
-  students: Pick<ClassStudent, 'id' | 'firstname' | 'lastname'>[],
-  classIds: number[],
-  date?: string,
-) => openNewEntry(students, classIds, date, 'notiz');
 
 /** Wochenansicht (Kalender) einer Klasse bzw. Lerngruppe öffnen. */
 export const openWeek = (scope: { classId: number } | { groupId: number }, name?: string) =>
@@ -158,7 +148,7 @@ export function showClassMenu(opts: {
   });
 }
 
-/** Weitere Aktionen für ausgewählte Schüler (Aufgabe, Termin). */
+/** Weitere Aktionen für ausgewählte Schüler (Termin, …). */
 export function showSelectionMenu(
   students: StudentRef[],
   scope: { classIds: number[]; groupId?: number | null },
@@ -166,10 +156,6 @@ export function showSelectionMenu(
 ) {
   showActionSheet({
     title: students.length === 1 ? students[0].firstname : `${students.length} Schüler`,
-    options: [
-      { label: 'Aufgabe', onPress: () => openNewTask(students, scope.classIds) },
-      { label: 'Termin (z. B. Elterngespräch)', onPress: () => openNewAppointment(students, scope) },
-      ...extra,
-    ],
+    options: [{ label: 'Termin (z. B. Elterngespräch)', onPress: () => openNewAppointment(students, scope) }, ...extra],
   });
 }

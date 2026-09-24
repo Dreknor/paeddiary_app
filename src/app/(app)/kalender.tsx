@@ -20,7 +20,7 @@ import { colors, font, radius, shadow, spacing, tabletBreakpoint, touchTarget } 
 const GRID_MIN_WIDTH = 1000;
 
 /**
- * Wochenansicht des Tagebuchs (wie „Pädagogisches Tagebuch“ im Web): offene Notizen, Einträge,
+ * Wochenansicht des Tagebuchs (wie „Pädagogisches Tagebuch“ im Web): offene und abgeschlossene Einträge,
  * Abhak-Spalten, Termine, Pausen und Abwesenheiten je Schüler und Tag.
  * Parameter: `classId` oder `groupId` (Lerngruppe), optional `name`.
  */
@@ -254,20 +254,20 @@ function StudentCard({
         {!absent ? (
           <>
             <Pressable
-              onPress={() => actions.newNote([student], date)}
-              style={({ pressed }) => [styles.action, pressed && styles.pressed]}
-              accessibilityRole="button"
-              accessibilityLabel={`Neue Notiz für ${student.firstname}`}
-            >
-              <Text style={styles.actionText}>+ Notiz</Text>
-            </Pressable>
-            <Pressable
               onPress={() => actions.newEntry([student], date)}
               style={({ pressed }) => [styles.action, pressed && styles.pressed]}
               accessibilityRole="button"
               accessibilityLabel={`Neuer Eintrag für ${student.firstname}`}
             >
               <Text style={styles.actionText}>+ Eintrag</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => actions.newTask([student])}
+              style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`Neue Aufgabe für ${student.firstname}`}
+            >
+              <Text style={styles.actionText}>+ Aufgabe</Text>
             </Pressable>
           </>
         ) : null}

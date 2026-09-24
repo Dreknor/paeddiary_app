@@ -93,7 +93,7 @@ export default function StartSettingsScreen() {
         }}
       />
       <Text style={styles.intro}>
-        „Liste“: erscheint unter „Meine Klassen“. „Heute“: Termine, offene Notizen und fällige Aufgaben erscheinen oben
+        „Liste“: erscheint unter „Meine Klassen“. „Heute“: Termine, offene Einträge und fällige Aufgaben erscheinen oben
         auf der Startseite.
       </Text>
       <Text style={styles.muted}>
@@ -115,7 +115,7 @@ export default function StartSettingsScreen() {
           <SectionTitle>Lerngruppen</SectionTitle>
           <View style={styles.card}>{groupRows.map(renderRow)}</View>
           <Text style={styles.muted}>
-            Tipp: Wählst du bei „Heute“ eine Lerngruppe und ihre Klasse, erscheinen Notizen doppelt.
+            Tipp: Wählst du bei „Heute“ eine Lerngruppe und ihre Klasse, erscheinen Einträge doppelt.
           </Text>
         </>
       ) : null}

@@ -169,8 +169,8 @@ export default function AppointmentScreen() {
           <SwitchRow label="Jede Woche" hint="Wöchentlich wiederholen." value={weekly} onValueChange={setWeekly} />
         ) : null}
         <SwitchRow
-          label="Offene Notizen ausblenden"
-          hint="Pausiert offene Notizen der Betroffenen am Termin."
+          label="Offene Einträge ausblenden"
+          hint="Pausiert offene Einträge der Betroffenen am Termin."
           value={pauseEntries}
           onValueChange={setPauseEntries}
         />

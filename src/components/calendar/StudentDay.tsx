@@ -18,7 +18,7 @@ type Props = {
   compact?: boolean;
 };
 
-/** Inhalt einer Zelle Schüler × Tag: Einträge, pausierte Notizen, Abhak-Spalten, Schüler-Termine. */
+/** Inhalt einer Zelle Schüler × Tag: Einträge, pausierte offene Einträge, Abhak-Spalten, Schüler-Termine. */
 export function StudentDay({ index, student, date, actions, showPaused, compact }: Props) {
   if (index.isAbsent(student.id, date)) {
     return (
@@ -50,7 +50,7 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
       ))}
 
       {entries.map((e) => (
-        // Offene Notizen: nach rechts wischen = abschließen, nach links = heute pausieren.
+        // Offene Einträge: nach rechts wischen = abschließen, nach links = heute pausieren.
         <SwipeRow
           key={`e-${e.id}`}
           right={
@@ -156,7 +156,7 @@ function EntryRow({
         onPress={onPress}
         style={({ pressed }) => [styles.entryBody, pressed && styles.pressed]}
         accessibilityRole="button"
-        accessibilityLabel={`${open ? 'Offene Notiz' : 'Eintrag'}${paused ? `, ${pauseLabel ?? 'pausiert'}` : ''}: ${entry.content}`}
+        accessibilityLabel={`${open ? 'Offener Eintrag' : 'Eintrag'}${paused ? `, ${pauseLabel ?? 'pausiert'}` : ''}: ${entry.content}`}
       >
         <View style={styles.entryMeta}>
           {entry.category_name ? (
@@ -184,7 +184,7 @@ function EntryRow({
           hitSlop={4}
           style={({ pressed }) => [styles.check, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Notiz abschließen"
+          accessibilityLabel="Eintrag abschließen"
         >
           <Text style={styles.checkText}>✓</Text>
         </Pressable>

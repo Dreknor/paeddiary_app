@@ -9,7 +9,7 @@ import { Chip } from '@/components/controls';
 import { ratingInfo } from '@/components/diagnostic/rating';
 import { StudentLinks } from '@/components/StudentLinks';
 import { Button, EmptyState, ErrorBox, Loading } from '@/components/ui';
-import { openNewNote } from '@/lib/navigation';
+import { openNewEntry } from '@/lib/navigation';
 import { colors, font, radius, shadow, spacing } from '@/theme';
 
 /**
@@ -97,9 +97,9 @@ function CriterionCard({ criterion: c, classId }: { criterion: DiagnosticCriteri
       ) : null}
       {group.length > 1 ? (
         <Button
-          title={`Notiz für diese ${group.length} Schüler`}
+          title={`Eintrag für diese ${group.length} Schüler`}
           variant="secondary"
-          onPress={() => openNewNote(group, [classId])}
+          onPress={() => openNewEntry(group, [classId])}
         />
       ) : null}
     </View>
