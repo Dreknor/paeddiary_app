@@ -26,8 +26,7 @@ export const queryKeys = {
   classGradingSessions: (classId: number) => ['classes', classId, 'grading-sessions'] as const,
   student: (studentId: number) => ['students', studentId] as const,
   studentView: (studentId: number) => ['students', studentId, 'view'] as const,
-  diaryEntries: (studentId: number, categoryId: number | null = null) =>
-    ['students', studentId, 'diary', categoryId] as const,
+  diaryEntries: (studentId: number, filter: DiaryFilter = {}) => ['students', studentId, 'diary', filter] as const,
   diaryAll: ['students'] as const,
   gradingHistory: (studentId: number) => ['students', studentId, 'grading'] as const,
   diagnosticHistory: (studentId: number) => ['students', studentId, 'diagnostic'] as const,
@@ -93,11 +92,19 @@ export function useDiaryCategories() {
   return useQuery({ queryKey: queryKeys.categories, queryFn: fetchDiaryCategories, staleTime: 60 * 60_000 });
 }
 
-export function useDiaryEntries(studentId: number, categoryId: number | null) {
+/** Filter für die Tagebuchliste eines Schülers. */
+export type DiaryFilter = { categoryId?: number | null; fromDate?: string | null };
+
+export function useDiaryEntries(studentId: number, filter: DiaryFilter) {
   return useInfiniteQuery({
-    queryKey: queryKeys.diaryEntries(studentId, categoryId),
+    queryKey: queryKeys.diaryEntries(studentId, filter),
     queryFn: ({ pageParam }) =>
-      fetchDiaryEntries(studentId, { page: pageParam, per_page: 25, category_id: categoryId ?? undefined }),
+      fetchDiaryEntries(studentId, {
+        page: pageParam,
+        per_page: 25,
+        category_id: filter.categoryId ?? undefined,
+        from_date: filter.fromDate ?? undefined,
+      }),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.meta.current_page < last.meta.last_page ? last.meta.current_page + 1 : undefined),
     enabled: Number.isFinite(studentId),
@@ -110,6 +117,16 @@ export function useDiaryWeek(scope: WeekScope, weekStart: string) {
     queryKey: queryKeys.diaryWeek(scope, weekStart),
     queryFn: () => fetchDiaryWeek(scope, weekStart),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** Wochen mehrerer Klassen parallel (Startseite „Heute“); teilt den Cache mit der Wochenansicht. */
+export function useDiaryWeeks(classIds: number[], weekStart: string) {
+  return useQueries({
+    queries: classIds.map((classId) => ({
+      queryKey: queryKeys.diaryWeek({ classId }, weekStart),
+      queryFn: () => fetchDiaryWeek({ classId }, weekStart),
+    })),
   });
 }
 

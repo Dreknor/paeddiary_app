@@ -26,6 +26,7 @@ export function WeekGrid({
   header,
   refreshing,
   onRefresh,
+  emptyText = 'Keine Schüler.',
 }: {
   week: DiaryWeek;
   index: WeekIndex;
@@ -34,6 +35,7 @@ export function WeekGrid({
   header: ReactElement;
   refreshing: boolean;
   onRefresh: () => void;
+  emptyText?: string;
 }) {
   const rows = buildRows(week);
   const className = (id: number) => week.classes.find((c) => c.id === id)?.short_name ?? null;
@@ -49,7 +51,7 @@ export function WeekGrid({
       ListHeaderComponent={header}
       ListHeaderComponentStyle={styles.header}
       ListFooterComponent={
-        week.students.length ? <View style={styles.footer} /> : <Text style={styles.empty}>Keine Schüler.</Text>
+        week.students.length ? <View style={styles.footer} /> : <Text style={styles.empty}>{emptyText}</Text>
       }
       removeClippedSubviews={false}
       renderItem={({ item }) => {

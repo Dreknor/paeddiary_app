@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { WeekEntry, WeekStudent } from '@/api/types';
+import { SwipeRow } from '@/components/SwipeRow';
 import { colors, font, radius, spacing } from '@/theme';
 
 import type { WeekActions } from './useWeekActions';
@@ -42,23 +43,38 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
       ))}
 
       {entries.map((e) => (
-        <EntryRow
+        // Offene Notizen: nach rechts wischen = abschließen, nach links = heute pausieren.
+        <SwipeRow
           key={`e-${e.id}`}
-          entry={e}
-          compact={compact}
-          onPress={() => actions.entryMenu(e, student, date)}
-          onComplete={e.is_completed ? undefined : () => actions.complete(e, student, date)}
-        />
+          right={
+            !compact && !e.is_completed
+              ? { label: 'Abschließen', onSwipe: () => actions.complete(e, student, date) }
+              : undefined
+          }
+          left={
+            !compact && !e.is_completed
+              ? { label: 'Heute pausieren', onSwipe: () => actions.pause(e, student, date, true) }
+              : undefined
+          }
+        >
+          <EntryRow
+            entry={e}
+            compact={compact}
+            onPress={() => actions.entryMenu(e, student, date)}
+            onComplete={e.is_completed ? undefined : () => actions.complete(e, student, date)}
+          />
+        </SwipeRow>
       ))}
 
       {paused.map((e) => (
-        <EntryRow
+        <SwipeRow
           key={`p-${e.id}`}
-          entry={e}
-          compact={compact}
-          paused
-          onPress={() => actions.entryMenu(e, student, date, true)}
-        />
+          right={
+            !compact ? { label: 'Wieder anzeigen', onSwipe: () => actions.pause(e, student, date, false) } : undefined
+          }
+        >
+          <EntryRow entry={e} compact={compact} paused onPress={() => actions.entryMenu(e, student, date, true)} />
+        </SwipeRow>
       ))}
 
       {columns.length ? (

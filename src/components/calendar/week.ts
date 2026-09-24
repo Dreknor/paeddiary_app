@@ -12,12 +12,26 @@ export class WeekIndex {
   private absences = new Set<string>();
   private values = new Map<string, string | null>();
   private hidden: Set<number>;
+  /** Schüler mit mindestens einem Eintrag (auch Notiz) mit Datum in dieser Woche. */
+  private observed = new Set<number>();
 
   constructor(readonly week: DiaryWeek) {
     week.pauses.forEach((p) => this.pauses.add(`${p.entry_id}|${p.schueler_id}|${p.date}`));
     week.absences.forEach((a) => this.absences.add(`${a.schueler_id}|${a.date}`));
     week.column_values.forEach((v) => this.values.set(`${v.column_id}|${v.schueler_id}|${v.date}`, v.value));
     this.hidden = new Set(week.hidden_category_ids);
+    week.entries
+      .filter((e) => e.entry_date >= week.week_start && e.entry_date <= week.week_end)
+      .forEach((e) => e.schueler_ids.forEach((id) => this.observed.add(id)));
+  }
+
+  /** Hat der Schüler in dieser Woche schon einen Eintrag oder eine neue Notiz? */
+  isObserved(studentId: number) {
+    return this.observed.has(studentId);
+  }
+
+  unobservedStudents(): WeekStudent[] {
+    return this.week.students.filter((s) => !this.observed.has(s.id));
   }
 
   isPaused(entryId: number, studentId: number, date: string) {

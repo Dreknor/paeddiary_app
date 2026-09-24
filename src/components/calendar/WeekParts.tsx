@@ -168,6 +168,7 @@ export function StudentHead({
 }) {
   const tasks = index.tasksFor(student.id);
   const openCount = index.openEntriesFor(student.id).length;
+  const unobserved = index.week.week_start <= todayIso() && !index.isObserved(student.id);
   const stage = student.current_grading
     ? {
         title: student.current_grading.stage_title,
@@ -184,9 +185,12 @@ export function StudentHead({
           <Text style={styles.name} numberOfLines={compact ? 2 : 1}>
             {student.firstname} {student.lastname}
           </Text>
-          {className || openCount ? (
+          {className || openCount || unobserved ? (
             <Text style={styles.nameMeta} numberOfLines={1}>
               {[className, openCount ? `${openCount} offen` : null].filter(Boolean).join(' · ')}
+              {unobserved ? (
+                <Text style={styles.unobserved}>{className || openCount ? ' · ' : ''}diese Woche ohne Eintrag</Text>
+              ) : null}
             </Text>
           ) : null}
         </View>
@@ -298,6 +302,7 @@ const styles = StyleSheet.create({
   headName: { flex: 1 },
   name: { fontSize: font.size.md, fontWeight: font.weight.semibold, color: colors.text },
   nameMeta: { fontSize: font.size.xs, color: colors.textMuted },
+  unobserved: { color: colors.accent, fontWeight: font.weight.semibold },
   alert: {
     backgroundColor: colors.warningSoft,
     borderRadius: radius.pill,

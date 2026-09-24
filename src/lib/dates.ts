@@ -58,6 +58,21 @@ export function schoolYearStartIso(reference = new Date()): string {
   return `${year}-08-01`;
 }
 
+/** Nächster Schultag: am Wochenende der kommende Montag, sonst `iso` selbst. */
+export function nextSchoolDayIso(iso = todayIso()): string {
+  const weekday = parseIsoDate(iso).getDay();
+  if (weekday === 6) return addDays(iso, 2);
+  if (weekday === 0) return addDays(iso, 1);
+  return iso;
+}
+
+/** Vorheriger bzw. nächster Schultag (Mo–Fr), Wochenenden werden übersprungen. */
+export function shiftSchoolDay(iso: string, direction: 1 | -1): string {
+  let next = addDays(iso, direction);
+  while ([0, 6].includes(parseIsoDate(next).getDay())) next = addDays(next, direction);
+  return next;
+}
+
 /** Montag der Woche, in der `iso` liegt. */
 export function startOfWeekIso(iso: string): string {
   const d = parseIsoDate(iso);
