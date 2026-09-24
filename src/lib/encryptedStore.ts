@@ -2,7 +2,7 @@ import { AESEncryptionKey, AESSealedData, aesDecryptAsync, aesEncryptAsync } fro
 import { Directory, File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 
-import { base64ToText, textToBase64 } from './encoding';
+import { utf8Decode, utf8Encode } from './encoding';
 
 /**
  * Verschlüsselte Ablage für Cache und Warteschlange (AES-256-GCM).
@@ -50,9 +50,10 @@ export const encryptedStore = {
       const file = fileFor(name);
       if (!file.exists) return null;
       try {
-        const sealed = AESSealedData.fromCombined(await file.base64());
-        const plain = await aesDecryptAsync(sealed, await getKey(), { output: 'base64' });
-        return base64ToText(plain as string);
+        // Bytes statt Base64: der Cache kann einige MB groß sein, Base64 in JS wäre beim Start spürbar langsam.
+        const sealed = AESSealedData.fromCombined(await file.bytes());
+        const plain = await aesDecryptAsync(sealed, await getKey());
+        return utf8Decode(plain);
       } catch {
         // Beschädigt oder Schlüssel neu (App neu installiert) → verwerfen.
         file.delete();
@@ -63,9 +64,9 @@ export const encryptedStore = {
 
   async setItem(name: string, value: string): Promise<void> {
     return serialized(name, async () => {
-      const sealed = await aesEncryptAsync(textToBase64(value), await getKey());
+      const sealed = await aesEncryptAsync(utf8Encode(value), await getKey());
       const file = fileFor(name);
-      file.write(await sealed.combined('base64'), { encoding: 'base64' });
+      file.write(await sealed.combined('bytes'));
     });
   },
 

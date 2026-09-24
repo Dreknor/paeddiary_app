@@ -29,9 +29,10 @@ function createQueryClient() {
   });
 }
 
-function RootNavigator() {
+function RootNavigator({ restored }: { restored: boolean }) {
   const { status } = useAuth();
-  if (status === 'loading') return <Loading />;
+  // Erst anzeigen, wenn der gespeicherte Cache geladen ist – sonst wirken Listen offline leer.
+  if (status === 'loading' || (status === 'signedIn' && !restored)) return <Loading />;
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
@@ -57,12 +58,18 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
+  const [restored, setRestored] = useState(false);
   return (
     <SafeAreaProvider>
-      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={persistOptions}
+        onSuccess={() => setRestored(true)}
+        onError={() => setRestored(true)}
+      >
         <AuthProvider>
           <StatusBar style="dark" />
-          <RootNavigator />
+          <RootNavigator restored={restored} />
           <ToastHost />
           <ActionSheetHost />
         </AuthProvider>

@@ -54,6 +54,7 @@ export default function LearningGroupScreen() {
         isRefetching={isRefetching}
         error={error}
         onRefresh={refetch}
+        fab={<Fab label="Eintrag" onPress={() => openNewEntry([], ids)} />}
         selectionActions={[
           { label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, ids) },
           { label: 'Notiz', onPress: (selected) => openNewNote(selected, ids) },
@@ -63,7 +64,6 @@ export default function LearningGroupScreen() {
           },
         ]}
       />
-      <Fab label="Eintrag" onPress={() => openNewEntry([], ids)} />
     </View>
   );
 }

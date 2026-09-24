@@ -1,6 +1,11 @@
 /** UTF-8 und Base64 ohne Abhängigkeit von TextEncoder/Buffer (Hermes-sicher). */
 
+type Coder = { encode?: (text: string) => Uint8Array; decode?: (bytes: Uint8Array) => string };
+const g = globalThis as { TextEncoder?: new () => Coder; TextDecoder?: new (label?: string) => Coder };
+
 export function utf8Encode(text: string): Uint8Array {
+  // Hermes bringt TextEncoder mit (nativ, schnell); sonst von Hand.
+  if (g.TextEncoder) return new g.TextEncoder().encode!(text);
   const bytes: number[] = [];
   for (let i = 0; i < text.length; i++) {
     let code = text.charCodeAt(i);
@@ -20,7 +25,20 @@ export function utf8Encode(text: string): Uint8Array {
 }
 
 export function utf8Decode(bytes: Uint8Array): string {
-  let out = '';
+  if (g.TextDecoder) {
+    try {
+      return new g.TextDecoder('utf-8').decode!(bytes);
+    } catch {
+      // Hermes-Versionen ohne vollständigen TextDecoder → Fallback
+    }
+  }
+  // Zeichen gesammelt umwandeln statt `out +=` je Zeichen (große Caches).
+  const parts: string[] = [];
+  const codes: number[] = [];
+  const flush = () => {
+    parts.push(String.fromCharCode(...codes));
+    codes.length = 0;
+  };
   for (let i = 0; i < bytes.length;) {
     const b = bytes[i++];
     let code: number;
@@ -30,10 +48,12 @@ export function utf8Decode(bytes: Uint8Array): string {
     else code = ((b & 7) << 18) | ((bytes[i++] & 63) << 12) | ((bytes[i++] & 63) << 6) | (bytes[i++] & 63);
     if (code >= 0x10000) {
       code -= 0x10000;
-      out += String.fromCharCode(0xd800 + (code >> 10), 0xdc00 + (code & 1023));
-    } else out += String.fromCharCode(code);
+      codes.push(0xd800 + (code >> 10), 0xdc00 + (code & 1023));
+    } else codes.push(code);
+    if (codes.length >= 8192) flush();
   }
-  return out;
+  flush();
+  return parts.join('');
 }
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';

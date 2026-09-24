@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 
 import type { ClassStudent } from '@/api/types';
+import { OfflineNotice } from '@/components/OfflineNotice';
+import { useIsOnline } from '@/sync/queryPersistence';
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
 
 import { BottomBar } from './controls';
@@ -34,6 +36,8 @@ type Props = {
   selectionActions?: SelectionAction[];
   /** Zusätzlicher Inhalt oberhalb der Suche (z. B. offene Gruppenbewertungen). */
   listHeader?: ReactNode;
+  /** Schwebender Knopf; während der Auswahl ausgeblendet (sonst überdeckt er die Aktionsleiste). */
+  fab?: ReactNode;
 };
 
 const MIN_TILE_WIDTH = 150;
@@ -48,8 +52,10 @@ export function StudentGrid({
   recentDays = 14,
   selectionActions,
   listHeader,
+  fab,
 }: Props) {
   const { width } = useWindowDimensions();
+  const online = useIsOnline();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<number> | null>(null);
   const selecting = selected !== null;
@@ -69,7 +75,8 @@ export function StudentGrid({
     return students.filter((s) => `${s.firstname} ${s.lastname}`.toLocaleLowerCase('de').includes(q));
   }, [students, search]);
 
-  if (isLoading) return <Loading />;
+  // Offline ohne gespeicherte Daten hängt die Abfrage (pausiert) – dann den Hinweis zeigen statt zu laden.
+  if (isLoading && online) return <Loading />;
 
   const selectedStudents = students.filter((s) => selected?.has(s.id));
 
@@ -86,7 +93,8 @@ export function StudentGrid({
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <View style={styles.header}>
-            {error ? <ErrorBox message={error.message} onRetry={onRefresh} /> : null}
+            <OfflineNotice missing={!students.length} />
+            {error && online ? <ErrorBox message={error.message} onRetry={onRefresh} /> : null}
             {listHeader}
             <TextInput
               value={search}
@@ -114,7 +122,9 @@ export function StudentGrid({
           </View>
         }
         ListEmptyComponent={
-          error ? null : <EmptyState title={search ? 'Kein Schüler gefunden.' : 'Keine Schüler in dieser Gruppe.'} />
+          error || !online ? null : (
+            <EmptyState title={search ? 'Kein Schüler gefunden.' : 'Keine Schüler in dieser Gruppe.'} />
+          )
         }
         renderItem={({ item }) => (
           <StudentTile
@@ -132,29 +142,39 @@ export function StudentGrid({
       />
       {selecting && selectionActions?.length ? (
         <BottomBar>
-          <Text style={styles.selectionCount}>{selectedStudents.length} ausgewählt</Text>
-          <Button
-            title={selectedStudents.length === students.length ? 'Keine' : 'Alle'}
-            variant="ghost"
-            onPress={() =>
-              setSelected(selectedStudents.length === students.length ? new Set() : new Set(students.map((s) => s.id)))
-            }
-          />
-          <View style={styles.flex} />
-          {selectionActions.map((a) => (
+          <View style={styles.selectionRow}>
+            <Text style={styles.selectionCount}>{selectedStudents.length} ausgewählt</Text>
             <Button
-              key={a.label}
-              title={a.label}
-              variant={a.primary ? 'primary' : 'secondary'}
-              disabled={!selectedStudents.length}
-              onPress={() => {
-                a.onPress(selectedStudents);
-                setSelected(null);
-              }}
+              title={selectedStudents.length === students.length ? 'Keine' : 'Alle'}
+              variant="ghost"
+              onPress={() =>
+                setSelected(
+                  selectedStudents.length === students.length ? new Set() : new Set(students.map((s) => s.id)),
+                )
+              }
             />
-          ))}
+            <Button title="Abbrechen" variant="ghost" onPress={() => setSelected(null)} />
+          </View>
+          {/* Aktionen gleich breit in einer Zeile – passt auch auf dem iPhone SE. */}
+          <View style={styles.selectionActions}>
+            {selectionActions.map((a) => (
+              <Button
+                key={a.label}
+                title={a.label}
+                variant={a.primary ? 'primary' : 'secondary'}
+                disabled={!selectedStudents.length}
+                style={styles.selectionAction}
+                onPress={() => {
+                  a.onPress(selectedStudents);
+                  setSelected(null);
+                }}
+              />
+            ))}
+          </View>
         </BottomBar>
-      ) : null}
+      ) : (
+        fab
+      )}
     </View>
   );
 }
@@ -239,6 +259,9 @@ const styles = StyleSheet.create({
     fontWeight: font.weight.semibold,
     padding: spacing.xs,
   },
+  selectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
+  selectionActions: { flexDirection: 'row', gap: spacing.sm, width: '100%' },
+  selectionAction: { flex: 1, paddingHorizontal: spacing.sm },
   selectionCount: { fontSize: font.size.md, fontWeight: font.weight.semibold, color: colors.text },
   tileSelected: { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primarySoft },
   check: {

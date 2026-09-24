@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
 
 import { AppLock } from '@/auth/AppLock';
+import { useOfflinePrefetch } from '@/sync/offlinePrefetch';
 import { colors, font } from '@/theme';
 
 export default function AppLayout() {
+  useOfflinePrefetch();
   return (
     <AppLock>
       <Stack

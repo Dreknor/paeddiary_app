@@ -1,6 +1,7 @@
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import NetInfo from '@react-native-community/netinfo';
 import { onlineManager, type Query } from '@tanstack/react-query';
+import { useSyncExternalStore } from 'react';
 
 import { encryptedStore } from '@/lib/encryptedStore';
 
@@ -26,3 +27,11 @@ export const persistOptions = {
 onlineManager.setEventListener((setOnline) =>
   NetInfo.addEventListener((state) => setOnline(state.isConnected !== false)),
 );
+
+/** Aktueller Netzstatus (wie TanStack Query ihn sieht). */
+export function useIsOnline() {
+  return useSyncExternalStore(
+    (onChange) => onlineManager.subscribe(onChange),
+    () => onlineManager.isOnline(),
+  );
+}

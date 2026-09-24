@@ -10,6 +10,7 @@ import { WeekIndex } from '@/components/calendar/week';
 import { WeekGrid } from '@/components/calendar/WeekGrid';
 import { DayBanner, DayTabs, StudentHead, WeekNavigator } from '@/components/calendar/WeekParts';
 import { Chip, Fab } from '@/components/controls';
+import { OfflineNotice } from '@/components/OfflineNotice';
 import { EmptyState, ErrorBox, Loading } from '@/components/ui';
 import { usePanResponder } from '@/lib/usePanResponder';
 import { addDays, nextSchoolDayIso, shiftSchoolDay, startOfWeekIso, todayIso } from '@/lib/dates';
@@ -36,7 +37,17 @@ export default function CalendarScreen() {
   const weekStart = startOfWeekIso(selectedDate);
   const weekKey = queryKeys.diaryWeek(scope, weekStart);
 
-  const { data: week, isLoading, error, refetch, isRefetching, isPlaceholderData } = useDiaryWeek(scope, weekStart);
+  const {
+    data: week,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+    isPlaceholderData,
+    fetchStatus,
+  } = useDiaryWeek(scope, weekStart);
+  // Offline und diese Woche nicht gespeichert: Abfrage pausiert, statt ewig zu laden.
+  const missingOffline = fetchStatus === 'paused' && (!week || isPlaceholderData);
   const index = useMemo(() => (week ? new WeekIndex(week) : null), [week]);
   const actions = useWeekActions(weekKey, week, scopeBody);
   const unobserved = useMemo(() => index?.unobservedStudents() ?? [], [index]);
@@ -62,6 +73,7 @@ export default function CalendarScreen() {
         isCurrentWeek={isCurrentWeek}
         loading={isPlaceholderData}
       />
+      <OfflineNotice missing={missingOffline} />
       <View style={styles.filters}>
         <Chip label="Pausierte zeigen" selected={showPaused} onPress={() => setShowPaused((v) => !v)} />
         <Chip label="+ Termin" onPress={() => actions.newAppointment([], useGrid ? today : selectedDate)} />
@@ -77,7 +89,9 @@ export default function CalendarScreen() {
   );
 
   let content;
-  if (isLoading) {
+  if (missingOffline) {
+    content = <View style={styles.padded}>{toolbar}</View>;
+  } else if (isLoading) {
     content = (
       <View style={styles.padded}>
         {toolbar}

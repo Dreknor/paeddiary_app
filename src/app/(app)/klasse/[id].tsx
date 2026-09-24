@@ -74,6 +74,7 @@ export default function ClassScreen() {
         isRefetching={isRefetching}
         error={error}
         onRefresh={refetch}
+        fab={<Fab label="Eintrag" onPress={() => openNewEntry([], [classId])} />}
         selectionActions={actions}
         listHeader={
           openGroupSessions.length ? (
@@ -98,7 +99,6 @@ export default function ClassScreen() {
           ) : null
         }
       />
-      <Fab label="Eintrag" onPress={() => openNewEntry([], [classId])} />
     </View>
   );
 }
