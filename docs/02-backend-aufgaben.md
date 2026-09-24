@@ -151,6 +151,15 @@ Jede Aufgabe = ein eigener Branch / Pull Request.
 
 ---
 
+## B9 – Planung & Übersichten (umgesetzt im `dev`-Zweig)
+
+- `search=` auf `/students/{id}/paed-diary/entries` und dem neuen Klassen-Feed `GET /classes/{id}/paed-diary/entries`
+  (Text ist verschlüsselt → Suche in PHP, max. 5000 Einträge, `meta.search_truncated`).
+- Aufgaben `POST/PUT /paed-diary/tasks`, Termine `POST/PUT/DELETE /paed-diary/appointments`.
+- Wiedervorlage `PUT /paed-diary/entries/{id}/resubmission` (Pausen mit Grund „Wiedervorlage“).
+- Schüler eines Eintrags `PUT/DELETE /paed-diary/entries/{id}/students/{schueler_id}`.
+- `GET /classes/{id}/grading/overview` (Stufenverteilung), `GET /classes/{id}/diagnostic/overview` (Förderbedarf).
+
 ## Reihenfolge
 
 `B1 → B2 → B3 → B4 → B6 → B5 → B7 → (B8)`

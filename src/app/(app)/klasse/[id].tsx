@@ -2,16 +2,17 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useClasses, useClassGradingSessions, useClassStudents } from '@/api/queries';
-import type { ClassStudent } from '@/api/types';
-import { Fab } from '@/components/controls';
+import { useAuth } from '@/auth/AuthContext';
+import { Fab, LinkButton } from '@/components/controls';
 import { StudentGrid, type SelectionAction } from '@/components/StudentGrid';
 import { formatDate } from '@/lib/dates';
-import { openNewEntry } from '@/lib/navigation';
+import { openNewEntry, openNewNote, openWeek, showClassMenu, showSelectionMenu } from '@/lib/navigation';
 import { colors, font, radius, shadow, spacing } from '@/theme';
 
 export default function ClassScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const classId = Number(id);
+  const { user } = useAuth();
   const { data, isLoading, isRefetching, error, refetch } = useClassStudents(classId);
   const { data: classes } = useClasses();
   const schoolClass = classes?.data.find((c) => c.id === classId);
@@ -21,23 +22,51 @@ export default function ClassScreen() {
 
   const actions: SelectionAction[] = [
     { label: 'Eintrag', primary: true, onPress: (selected) => openNewEntry(selected, [classId]) },
-    ...(hasGrading
-      ? [
-          {
-            label: 'Graduierung',
-            onPress: (selected: ClassStudent[]) =>
-              router.push({
-                pathname: '/graduierung/gruppe',
-                params: { classId: String(classId), studentIds: selected.map((s) => s.id).join(',') },
-              }),
-          },
-        ]
-      : []),
+    { label: 'Notiz', onPress: (selected) => openNewNote(selected, [classId]) },
+    {
+      label: 'Mehr …',
+      onPress: (selected) =>
+        showSelectionMenu(
+          selected,
+          { classIds: [classId] },
+          hasGrading
+            ? [
+                {
+                  label: 'Graduierung',
+                  onPress: () =>
+                    router.push({
+                      pathname: '/graduierung/gruppe',
+                      params: { classId: String(classId), studentIds: selected.map((s) => s.id).join(',') },
+                    }),
+                },
+              ]
+            : [],
+        ),
+    },
   ];
 
   return (
     <View style={styles.flex}>
-      <Stack.Screen options={{ title: data?.meta.class.name ?? name ?? 'Klasse' }} />
+      <Stack.Screen
+        options={{
+          title: data?.meta.class.name ?? name ?? 'Klasse',
+          headerRight: () => (
+            <View style={styles.headerButtons}>
+              <LinkButton label="Woche" onPress={() => openWeek({ classId }, data?.meta.class.name ?? name)} />
+              <LinkButton
+                label="Mehr"
+                onPress={() =>
+                  showClassMenu({
+                    title: data?.meta.class.name ?? name ?? 'Klasse',
+                    classes: [{ id: classId, name: data?.meta.class.name ?? name ?? 'Klasse' }],
+                    canViewDiagnostics: !!user?.permissions.view_diagnostics,
+                  })
+                }
+              />
+            </View>
+          ),
+        }}
+      />
       <StudentGrid
         students={data?.data ?? []}
         recentDays={data?.meta.recent_days}
@@ -76,6 +105,7 @@ export default function ClassScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  headerButtons: { flexDirection: 'row', gap: spacing.lg },
   sessions: { gap: spacing.sm },
   session: {
     backgroundColor: colors.surface,

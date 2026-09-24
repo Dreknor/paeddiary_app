@@ -101,6 +101,8 @@ export type DiaryEntry = {
   is_own: boolean;
   created_at: string;
   updated_at: string;
+  /** Nur im Klassen-Feed: Schüler des Eintrags (Vorname + Initial). */
+  students?: { id: number; firstname: string; lastname_initial: string | null }[];
 };
 
 export type DevelopmentGoal = {
@@ -155,7 +157,15 @@ export type DiaryCategory = {
 export type Paginated<T> = {
   data: T[];
   links: { next: string | null; prev: string | null };
-  meta: { current_page: number; last_page: number; per_page: number; total: number };
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    /** Nur bei Volltextsuche: verwendete Suchwörter bzw. ob ältere Einträge nicht durchsucht wurden. */
+    search_terms?: string[];
+    search_truncated?: boolean;
+  };
 };
 
 export type DiaryEntryInput = {
@@ -415,4 +425,172 @@ export type Device = {
   created_at: string;
   expires_at: string | null;
   is_current: boolean;
+};
+
+// ---------------------------------------------------------------- Wochenansicht (Kalender)
+
+export type WeekColumnType = 'boolean' | 'ampel' | 'text';
+
+export type WeekEntry = {
+  id: number;
+  class_id: number;
+  schueler_ids: number[];
+  entry_date: string;
+  content: string;
+  category_id: number | null;
+  category_name: string | null;
+  category_color: string | null;
+  created_by_name: string | null;
+  is_own: boolean;
+  is_completed: boolean;
+  completed_at: string | null;
+};
+
+export type WeekStudent = {
+  id: number;
+  firstname: string;
+  lastname: string;
+  class_id: number;
+  current_grading: ClassStudent['current_grading'];
+  absence_alerts: { type: string | null; label: string; severity: string; summary: string }[];
+};
+
+export type WeekAppointment = {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string;
+  start_time: string | null;
+  end_time: string | null;
+  is_recurring: boolean;
+  recurring_type?: 'daily' | 'weekly' | 'monthly' | null;
+  pause_entries?: boolean;
+  /** Selbst angelegt. */
+  is_own?: boolean;
+  class_ids: number[];
+  group_ids: number[];
+  schueler_ids: number[];
+};
+
+export type WeekPause = {
+  entry_id: number;
+  schueler_id: number;
+  date: string;
+  /** z. B. „Ferien“, „Termin“, „Wiedervorlage“; null = einzeln pausiert. */
+  reason?: string | null;
+};
+
+export type DiaryWeek = {
+  week_start: string;
+  week_end: string;
+  group: { id: number; name: string } | null;
+  classes: { id: number; name: string; short_name: string | null; color: string | null }[];
+  days: { date: string; is_holiday: boolean; holiday_name: string | null }[];
+  students: WeekStudent[];
+  entries: WeekEntry[];
+  pauses: WeekPause[];
+  absences: { schueler_id: number; date: string }[];
+  day_pauses: { class_id: number; date: string; reason: string }[];
+  columns: { id: number; class_id: number; name: string; type: WeekColumnType; category: string | null }[];
+  column_values: { column_id: number; schueler_id: number; date: string; value: string | null }[];
+  tasks: {
+    id: number;
+    schueler_id: number;
+    title: string;
+    description: string | null;
+    due_date: string | null;
+    highlighted: boolean;
+  }[];
+  appointments: WeekAppointment[];
+  hidden_category_ids: number[];
+};
+
+/** Klasse oder Lerngruppe, für die die Wochenansicht geladen wird. */
+export type WeekScope = { classId: number } | { groupId: number };
+
+/** Grund der Pausen, die eine Wiedervorlage anlegt. */
+export const RESUBMISSION_REASON = 'Wiedervorlage';
+
+// ---------------------------------------------------------------- Planung (Aufgaben, Termine)
+
+export type DiaryTask = {
+  id: number;
+  schueler_id: number;
+  klasse_id: number;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  highlighted: boolean;
+  status: 'open' | 'closed';
+};
+
+export type TaskInput = {
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  highlighted: boolean;
+};
+
+export type AppointmentInput = {
+  title: string;
+  description: string | null;
+  start_date: string;
+  start_time: string | null;
+  end_time: string | null;
+  is_recurring: boolean;
+  recurring_type: 'daily' | 'weekly' | 'monthly' | null;
+  pause_entries: boolean;
+  class_ids: number[];
+  group_ids: number[];
+  schueler_ids: number[];
+};
+
+export type Appointment = AppointmentInput & {
+  id: number;
+  recurring_interval: number;
+  recurring_end_date: string | null;
+  is_own: boolean;
+};
+
+// ---------------------------------------------------------------- Klassenübersichten
+
+export type StudentBrief = { id: number; firstname: string; lastname: string };
+
+export type GradingOverview = {
+  class: { id: number; name: string };
+  grading_system: { id: number; name: string } | null;
+  students_total: number;
+  open_sessions_count: number;
+  stages: {
+    id: number;
+    title: string;
+    level: number;
+    symbol: string | null;
+    badge_image_url: string | null;
+    count: number;
+    students: StudentBrief[];
+  }[];
+  other_stages: (StudentBrief & { stage_title: string })[];
+  without_stage: StudentBrief[];
+};
+
+export type DiagnosticCriterionOverview = {
+  criterion_id: number;
+  code: string;
+  description: string;
+  stage_id: number | null;
+  stage_title: string | null;
+  area_id: number | null;
+  area_title: string | null;
+  counts: { white: number; gray: number; dark_gray: number; assessed: number };
+  students_not_yet: (StudentBrief & { assessed_on: string | null })[];
+  students_partial: (StudentBrief & { assessed_on: string | null })[];
+};
+
+export type DiagnosticClassOverview = {
+  class: { id: number; name: string };
+  students_total: number;
+  assessed_students: number;
+  areas: { id: number; title: string }[];
+  criteria: DiagnosticCriterionOverview[];
 };

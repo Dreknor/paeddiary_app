@@ -115,7 +115,8 @@ export default function FinalizeScreen() {
               .map((s) => (
                 <Chip
                   key={s.id}
-                  label={`${s.symbol ? `${s.symbol} ` : ''}${s.title}`}
+                  icon={s.badge_image_url ? <StageBadge stage={s} size={24} /> : undefined}
+                  label={`${s.symbol && !s.badge_image_url ? `${s.symbol} ` : ''}${s.title}`}
                   selected={stage === s.id}
                   onPress={() => setStage(s.id)}
                 />

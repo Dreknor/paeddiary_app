@@ -1,11 +1,14 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { router, Stack } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { useClasses } from '@/api/queries';
+import { queryKeys, useClasses } from '@/api/queries';
 import type { LearningGroup, SchoolClass } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { LinkButton } from '@/components/controls';
+import { openWeek } from '@/lib/navigation';
+import { TodayPanel } from '@/components/today/TodayPanel';
 import { EmptyState, ErrorBox, Loading } from '@/components/ui';
 import { useOutbox } from '@/sync/outbox';
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
@@ -15,6 +18,11 @@ type Tab = 'classes' | 'groups';
 export default function ClassesScreen() {
   const { user, server } = useAuth();
   const { data, isLoading, error, refetch, isRefetching } = useClasses();
+  const queryClient = useQueryClient();
+  const refresh = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: queryKeys.diaryWeeks });
+  };
   const [tab, setTab] = useState<Tab>('classes');
   const outbox = useOutbox().filter((i) => i.userId === user?.id);
   const failed = outbox.filter((i) => i.status === 'failed').length;
@@ -31,7 +39,7 @@ export default function ClassesScreen() {
       />
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refresh} />}
       >
         <Text style={styles.greeting}>Hallo {user?.name}</Text>
 
@@ -48,6 +56,10 @@ export default function ClassesScreen() {
             </Text>
           </Pressable>
         ) : null}
+
+        {data?.data.length ? <TodayPanel classes={data.data} /> : null}
+
+        {data ? <Text style={styles.heading}>{groups.length ? 'Klassen & Lerngruppen' : 'Meine Klassen'}</Text> : null}
 
         {groups.length > 0 ? (
           <View style={styles.segment} accessibilityRole="tablist">
@@ -110,6 +122,7 @@ function ClassCard({ item }: { item: SchoolClass }) {
           {item.students_count} Schüler · {item.school_year}
         </Text>
       </View>
+      <WeekButton onPress={() => openWeek({ classId: item.id }, item.name)} name={item.name} />
     </Pressable>
   );
 }
@@ -135,6 +148,21 @@ function GroupCard({ item, classes }: { item: LearningGroup; classes: SchoolClas
         <Text style={styles.cardTitle}>{item.name}</Text>
         <Text style={styles.cardMeta}>{names.join(' · ')}</Text>
       </View>
+      <WeekButton onPress={() => openWeek({ groupId: item.id }, item.name)} name={item.name} />
+    </Pressable>
+  );
+}
+
+/** Direkt zur Wochenansicht (Kalender). */
+function WeekButton({ onPress, name }: { onPress: () => void; name: string }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.weekButton, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`Wochenansicht ${name}`}
+    >
+      <Text style={styles.weekButtonText}>Woche</Text>
     </Pressable>
   );
 }
@@ -145,6 +173,7 @@ const styles = StyleSheet.create({
   syncFailed: { backgroundColor: colors.dangerSoft },
   syncText: { color: colors.warning, fontSize: font.size.sm, fontWeight: font.weight.medium },
   syncTextFailed: { color: colors.danger },
+  heading: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: colors.text },
   greeting: { fontSize: font.size.lg, color: colors.textMuted },
   segment: {
     flexDirection: 'row',
@@ -173,4 +202,16 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, padding: spacing.lg, gap: spacing.xs },
   cardTitle: { fontSize: font.size.lg, fontWeight: font.weight.semibold, color: colors.text },
   cardMeta: { fontSize: font.size.sm, color: colors.textMuted },
+  weekButton: {
+    alignSelf: 'center',
+    minHeight: touchTarget,
+    minWidth: touchTarget,
+    marginRight: spacing.md,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+  },
+  weekButtonText: { color: colors.primary, fontWeight: font.weight.semibold, fontSize: font.size.sm },
 });

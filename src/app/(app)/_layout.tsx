@@ -18,6 +18,7 @@ export default function AppLayout() {
         <Stack.Screen name="index" options={{ title: 'Meine Klassen' }} />
         <Stack.Screen name="klasse/[id]" options={{ title: 'Klasse' }} />
         <Stack.Screen name="lerngruppe/[id]" options={{ title: 'Lerngruppe' }} />
+        <Stack.Screen name="kalender" options={{ title: 'Woche' }} />
         <Stack.Screen name="schueler/[id]" options={{ title: '' }} />
         <Stack.Screen name="eintrag/neu" options={{ title: 'Neuer Eintrag', presentation: 'modal' }} />
         <Stack.Screen name="eintrag/[id]" options={{ title: 'Eintrag', presentation: 'modal' }} />
@@ -35,6 +36,11 @@ export default function AppLayout() {
         <Stack.Screen name="diagnose/neu" options={{ title: 'Diagnose' }} />
         <Stack.Screen name="dossier/[studentId]" options={{ title: 'Dossier' }} />
         <Stack.Screen name="einstellungen" options={{ title: 'Einstellungen' }} />
+        <Stack.Screen name="planung/aufgabe" options={{ title: 'Aufgabe', presentation: 'modal' }} />
+        <Stack.Screen name="planung/termin" options={{ title: 'Termin', presentation: 'modal' }} />
+        <Stack.Screen name="planung/feed" options={{ title: 'Feed' }} />
+        <Stack.Screen name="planung/stufen" options={{ title: 'Stufen' }} />
+        <Stack.Screen name="planung/diagnose" options={{ title: 'Förderbedarf' }} />
       </Stack>
     </AppLock>
   );

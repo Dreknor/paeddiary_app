@@ -1,19 +1,59 @@
-import { useState, type ReactElement } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState, type ReactElement } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { useDiaryCategories, useDiaryEntries } from '@/api/queries';
 import { Chip } from '@/components/controls';
 import { EmptyState, ErrorBox } from '@/components/ui';
+import { addDays, schoolYearStartIso, todayIso } from '@/lib/dates';
 import { useOutboxItems } from '@/sync/outbox';
-import { colors, spacing } from '@/theme';
+import { colors, font, radius, spacing, touchTarget } from '@/theme';
 
 import { DiaryEntryRow, PendingEntryRow } from './DiaryEntryRow';
 
-/** Alle Tagebucheinträge eines Schülers, neueste zuerst, mit Kategorie-Filter und Endlos-Scrollen. */
+type Range = 'all' | '4w' | 'half' | 'year';
+
+const RANGES: { value: Range; label: string }[] = [
+  { value: 'all', label: 'Gesamt' },
+  { value: '4w', label: '4 Wochen' },
+  { value: 'half', label: 'Halbjahr' },
+  { value: 'year', label: 'Schuljahr' },
+];
+
+/** Beginn des Zeitraums; Halbjahr = ab 1. Februar bzw. Schuljahresbeginn (Sachsen). */
+function rangeStart(range: Range): string | null {
+  const today = todayIso();
+  if (range === '4w') return addDays(today, -28);
+  const yearStart = schoolYearStartIso();
+  if (range === 'year') return yearStart;
+  if (range === 'half') {
+    const february = `${Number(yearStart.slice(0, 4)) + 1}-02-01`;
+    return today >= february ? february : yearStart;
+  }
+  return null;
+}
+
+/** Alle Tagebucheinträge eines Schülers, neueste zuerst, mit Zeitraum- und Kategorie-Filter und Endlos-Scrollen. */
 export function DiaryTab({ studentId, header }: { studentId: number; header: ReactElement }) {
   const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [range, setRange] = useState<Range>('all');
+  // Eingabe sofort anzeigen, Suche erst beim Absenden (Server entschlüsselt und durchsucht).
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const { data: categories } = useDiaryCategories();
-  const query = useDiaryEntries(studentId, categoryId);
+  const filter = useMemo(
+    () => ({ categoryId, fromDate: rangeStart(range), search: search || null }),
+    [categoryId, range, search],
+  );
+  const query = useDiaryEntries(studentId, filter);
   const pending = useOutboxItems(
     'diary',
     (i) => i.method === 'POST' && ((i.meta?.studentIds as number[] | undefined) ?? []).includes(studentId),
@@ -32,6 +72,31 @@ export function DiaryTab({ studentId, header }: { studentId: number; header: Rea
       ListHeaderComponent={
         <View style={styles.header}>
           {header}
+          <TextInput
+            value={searchInput}
+            onChangeText={(t) => {
+              setSearchInput(t);
+              if (!t.trim()) setSearch('');
+            }}
+            onSubmitEditing={() => setSearch(searchInput.trim())}
+            placeholder="Suchen, z. B. Streit Klettergerüst"
+            placeholderTextColor={colors.textSubtle}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+            accessibilityLabel="Im Tagebuch suchen"
+            style={styles.search}
+          />
+          {search && query.data ? (
+            <Text style={styles.searchInfo}>
+              {query.data.pages[0]?.meta.total ?? 0} Treffer
+              {query.data.pages[0]?.meta.search_truncated ? ' · ältere Einträge nicht durchsucht' : ''}
+            </Text>
+          ) : null}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+            {RANGES.map((r) => (
+              <Chip key={r.value} label={r.label} selected={range === r.value} onPress={() => setRange(r.value)} />
+            ))}
+          </ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
             <Chip label="Alle" selected={categoryId === null} onPress={() => setCategoryId(null)} />
             {(categories ?? [])
@@ -64,7 +129,11 @@ export function DiaryTab({ studentId, header }: { studentId: number; header: Rea
         query.isLoading ? (
           <ActivityIndicator color={colors.primary} style={styles.loader} />
         ) : query.error ? null : (
-          <EmptyState title="Noch keine Einträge." />
+          <EmptyState
+            title={
+              range === 'all' && categoryId === null ? 'Noch keine Einträge.' : 'Keine Einträge in diesem Zeitraum.'
+            }
+          />
         )
       }
       ListFooterComponent={
@@ -80,6 +149,17 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, width: '100%', maxWidth: 900, alignSelf: 'center' },
   header: { gap: spacing.md, marginBottom: spacing.md },
   filters: { gap: spacing.sm, paddingVertical: spacing.xs },
+  search: {
+    minHeight: touchTarget,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    fontSize: font.size.md,
+    color: colors.text,
+  },
+  searchInfo: { fontSize: font.size.sm, color: colors.textMuted },
   separator: { height: spacing.sm },
   loader: { marginTop: spacing.xl },
   footer: { height: 120, alignItems: 'center', paddingTop: spacing.lg },

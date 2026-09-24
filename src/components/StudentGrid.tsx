@@ -15,6 +15,7 @@ import type { ClassStudent } from '@/api/types';
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
 
 import { BottomBar } from './controls';
+import { StageBadge } from './grading/StageBadge';
 import { Avatar, Button, EmptyState, ErrorBox, Loading } from './ui';
 
 type Student = ClassStudent & { className?: string };
@@ -210,10 +211,18 @@ function StudentTile({
       </Text>
       <View style={styles.badges}>
         {grading ? (
-          <Text style={styles.badge} numberOfLines={1}>
-            {grading.symbol ? `${grading.symbol} ` : ''}
-            {grading.stage_title}
-          </Text>
+          <View style={styles.stage}>
+            {grading.badge_url ? (
+              <StageBadge
+                stage={{ title: grading.stage_title, symbol: grading.symbol, badge_image_url: grading.badge_url }}
+                size={22}
+              />
+            ) : null}
+            <Text style={[styles.badge, styles.stageText]} numberOfLines={1}>
+              {grading.symbol && !grading.badge_url ? `${grading.symbol} ` : ''}
+              {grading.stage_title}
+            </Text>
+          </View>
         ) : null}
         {goals ? <Text style={[styles.badge, styles.goalBadge]}>{goals} Ziele</Text> : null}
       </View>
@@ -277,6 +286,8 @@ const styles = StyleSheet.create({
   tileDot: { position: 'absolute', top: spacing.md, right: spacing.md },
   name: { marginTop: spacing.sm, fontSize: font.size.md, fontWeight: font.weight.semibold, color: colors.text },
   lastname: { fontSize: font.size.sm, color: colors.textMuted },
+  stage: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, maxWidth: '100%' },
+  stageText: { flexShrink: 1 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.xs, marginTop: spacing.sm },
   badge: {
     fontSize: font.size.xs,

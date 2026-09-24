@@ -4,19 +4,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
 
-/** Auswahl-Chip, optional mit Farbpunkt (Kategorie). */
+/** Auswahl-Chip, optional mit Farbpunkt (Kategorie) oder Symbol (z. B. Stufenbild). */
 export function Chip({
   label,
   selected,
   onPress,
   color,
   disabled,
+  icon,
 }: {
   label: string;
   selected?: boolean;
   onPress?: () => void;
   color?: string | null;
   disabled?: boolean;
+  icon?: ReactNode;
 }) {
   return (
     <Pressable
@@ -34,6 +36,7 @@ export function Chip({
       ]}
     >
       {color && !selected ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
+      {icon}
       <Text style={[styles.chipText, selected && styles.chipTextSelected]} numberOfLines={1}>
         {label}
       </Text>
