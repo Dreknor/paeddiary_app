@@ -132,12 +132,12 @@ export function useDiaryWeek(scope: WeekScope, weekStart: string) {
   });
 }
 
-/** Wochen mehrerer Klassen parallel (Startseite „Heute“); teilt den Cache mit der Wochenansicht. */
-export function useDiaryWeeks(classIds: number[], weekStart: string) {
+/** Wochen mehrerer Klassen/Lerngruppen parallel (Startseite „Heute“); teilt den Cache mit der Wochenansicht. */
+export function useDiaryWeeks(scopes: WeekScope[], weekStart: string) {
   return useQueries({
-    queries: classIds.map((classId) => ({
-      queryKey: queryKeys.diaryWeek({ classId }, weekStart),
-      queryFn: () => fetchDiaryWeek({ classId }, weekStart),
+    queries: scopes.map((scope) => ({
+      queryKey: queryKeys.diaryWeek(scope, weekStart),
+      queryFn: () => fetchDiaryWeek(scope, weekStart),
     })),
   });
 }

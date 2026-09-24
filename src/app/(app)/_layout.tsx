@@ -36,6 +36,7 @@ export default function AppLayout() {
         <Stack.Screen name="diagnose/neu" options={{ title: 'Diagnose' }} />
         <Stack.Screen name="dossier/[studentId]" options={{ title: 'Dossier' }} />
         <Stack.Screen name="einstellungen" options={{ title: 'Einstellungen' }} />
+        <Stack.Screen name="startseite" options={{ title: 'Startseite', presentation: 'modal' }} />
         <Stack.Screen name="planung/aufgabe" options={{ title: 'Aufgabe', presentation: 'modal' }} />
         <Stack.Screen name="planung/termin" options={{ title: 'Termin', presentation: 'modal' }} />
         <Stack.Screen name="planung/feed" options={{ title: 'Feed' }} />

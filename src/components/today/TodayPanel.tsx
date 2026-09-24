@@ -1,57 +1,73 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useDiaryWeeks } from '@/api/queries';
-import type { DiaryWeek, SchoolClass } from '@/api/types';
+import type { DiaryWeek, WeekScope } from '@/api/types';
+import { LinkButton } from '@/components/controls';
 import { appointmentLabel, WeekIndex } from '@/components/calendar/week';
 import { formatDayMonth, formatRelativeDay, nextSchoolDayIso, startOfWeekIso, todayIso } from '@/lib/dates';
 import { openWeek } from '@/lib/navigation';
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
 
-/** Mehr Klassen lädt die Startseite nicht auf einmal (je Klasse ein Abruf). */
-const MAX_CLASSES = 6;
 const MAX_ITEMS = 4;
 
 type Item = { key: string; text: string; meta: string; tone?: 'danger' | 'accent' };
 
-type ClassToday = { schoolClass: SchoolClass; notes: Item[]; tasks: Item[]; appointments: Item[] };
+/** Klasse oder Lerngruppe, die bei „Heute“ erscheint. */
+export type TodayTarget = { key: string; scope: WeekScope; name: string; color: string };
 
-/** Was heute ansteht: eigene offene Notizen, fällige Aufgaben und Termine je Klasse. */
-export function TodayPanel({ classes }: { classes: SchoolClass[] }) {
+type TargetToday = { target: TodayTarget; notes: Item[]; tasks: Item[]; appointments: Item[] };
+
+/** Was heute ansteht: Termine, eigene offene Notizen und fällige Aufgaben je Klasse/Lerngruppe. */
+export function TodayPanel({
+  targets,
+  hint,
+  onCustomize,
+}: {
+  targets: TodayTarget[];
+  /** Zusatzhinweis unter der Liste (z. B. „weitere über Anpassen“). */
+  hint?: string | null;
+  onCustomize: () => void;
+}) {
   const day = nextSchoolDayIso();
-  const shown = classes.slice(0, MAX_CLASSES);
   const results = useDiaryWeeks(
-    shown.map((c) => c.id),
+    targets.map((t) => t.scope),
     startOfWeekIso(day),
   );
 
-  const perClass = shown
-    .map((schoolClass, i) => {
+  const perTarget = targets
+    .map((target, i) => {
       const week = results[i]?.data;
-      return week ? summarize(schoolClass, week, day) : null;
+      return week ? summarize(target, week, day) : null;
     })
-    .filter((c): c is ClassToday => !!c && c.notes.length + c.tasks.length + c.appointments.length > 0);
+    .filter((c): c is TargetToday => !!c && c.notes.length + c.tasks.length + c.appointments.length > 0);
 
   const loading = results.some((r) => r.isLoading);
   const title = day === todayIso() ? 'Heute' : `Am ${formatRelativeDay(day)}`;
 
   return (
     <View style={styles.panel}>
-      <Text style={styles.title}>{title}</Text>
-      {loading && !perClass.length ? <Text style={styles.muted}>Lädt …</Text> : null}
-      {!loading && !perClass.length ? (
-        <Text style={styles.muted}>Keine offenen Notizen, Aufgaben oder Termine.</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{title}</Text>
+        <LinkButton label="Anpassen" onPress={onCustomize} />
+      </View>
+      {!targets.length ? (
+        <Text style={styles.muted}>Keine Klasse gewählt. Über „Anpassen“ legst du fest, was hier erscheint.</Text>
       ) : null}
-      {perClass.map((c) => (
+      {targets.length > 0 && loading && !perTarget.length ? <Text style={styles.muted}>Lädt …</Text> : null}
+      {targets.length > 0 && !loading && !perTarget.length ? (
+        <Text style={styles.muted}>Keine Termine, offenen Notizen oder Aufgaben.</Text>
+      ) : null}
+      {perTarget.map((c) => (
         <Pressable
-          key={c.schoolClass.id}
-          onPress={() => openWeek({ classId: c.schoolClass.id }, c.schoolClass.name)}
+          key={c.target.key}
+          onPress={() => openWeek(c.target.scope, c.target.name)}
           style={({ pressed }) => [styles.classBlock, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel={`Wochenansicht ${c.schoolClass.name} öffnen`}
+          accessibilityLabel={`Wochenansicht ${c.target.name} öffnen`}
         >
           <View style={styles.classHead}>
-            <View style={[styles.dot, { backgroundColor: c.schoolClass.color || colors.primary }]} />
-            <Text style={styles.className}>{c.schoolClass.name}</Text>
+            <View style={[styles.dot, { backgroundColor: c.target.color }]} />
+            <Text style={styles.className}>{c.target.name}</Text>
             <Text style={styles.open}>Woche ›</Text>
           </View>
           <Section label="Termine" items={c.appointments} />
@@ -59,9 +75,7 @@ export function TodayPanel({ classes }: { classes: SchoolClass[] }) {
           <Section label="Aufgaben" items={c.tasks} />
         </Pressable>
       ))}
-      {classes.length > MAX_CLASSES ? (
-        <Text style={styles.muted}>Weitere Klassen findest du über „Woche“ in der Liste.</Text>
-      ) : null}
+      {hint ? <Text style={styles.muted}>{hint}</Text> : null}
     </View>
   );
 }
@@ -90,7 +104,7 @@ function Section({ label, items }: { label: string; items: Item[] }) {
   );
 }
 
-function summarize(schoolClass: SchoolClass, week: DiaryWeek, day: string): ClassToday {
+function summarize(target: TodayTarget, week: DiaryWeek, day: string): TargetToday {
   const index = new WeekIndex(week);
   const name = (id: number) => week.students.find((s) => s.id === id)?.firstname;
   const isHoliday = week.days.find((d) => d.date === day)?.is_holiday ?? false;
@@ -121,13 +135,14 @@ function summarize(schoolClass: SchoolClass, week: DiaryWeek, day: string): Clas
 
   const appointments: Item[] = week.appointments
     .filter((a) => a.date === day)
+    .sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? ''))
     .map((a) => ({
       key: `a${a.id}`,
       text: appointmentLabel(a),
       meta: a.schueler_ids.map(name).filter(Boolean).join(', '),
     }));
 
-  return { schoolClass, notes, tasks, appointments };
+  return { target, notes, tasks, appointments };
 }
 
 function dueLabel(due: string, day: string) {
@@ -138,6 +153,7 @@ function dueLabel(due: string, day: string) {
 
 const styles = StyleSheet.create({
   panel: { gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   title: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: colors.text },
   muted: { fontSize: font.size.sm, color: colors.textMuted },
   pressed: { opacity: 0.8 },

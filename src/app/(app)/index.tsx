@@ -8,7 +8,8 @@ import type { LearningGroup, SchoolClass } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { LinkButton } from '@/components/controls';
 import { openWeek } from '@/lib/navigation';
-import { TodayPanel } from '@/components/today/TodayPanel';
+import { classKey, groupKey, keyToScope, MAX_TODAY, useStartPrefs, type StartKey } from '@/lib/startPrefs';
+import { TodayPanel, type TodayTarget } from '@/components/today/TodayPanel';
 import { EmptyState, ErrorBox, Loading } from '@/components/ui';
 import { useOutbox } from '@/sync/outbox';
 import { colors, font, radius, shadow, spacing, touchTarget } from '@/theme';
@@ -27,7 +28,23 @@ export default function ClassesScreen() {
   const outbox = useOutbox().filter((i) => i.userId === user?.id);
   const failed = outbox.filter((i) => i.status === 'failed').length;
 
+  const { prefs, ready } = useStartPrefs(user?.id);
+  const classes = data?.data ?? [];
   const groups = data?.learning_groups ?? [];
+  const hidden = new Set(prefs.hidden);
+  const visibleClasses = classes.filter((c) => !hidden.has(classKey(c.id)));
+  const visibleGroups = groups.filter((g) => !hidden.has(groupKey(g.id)));
+  const hiddenCount = classes.length + groups.length - visibleClasses.length - visibleGroups.length;
+  // Nur Lerngruppen sichtbar → gleich diese zeigen.
+  const shownTab: Tab = !visibleGroups.length ? 'classes' : !visibleClasses.length ? 'groups' : tab;
+
+  const todayKeys = prefs.today ?? classes.slice(0, MAX_TODAY).map((c) => classKey(c.id));
+  const targets = todayKeys.map((key) => todayTarget(key, classes, groups)).filter((t): t is TodayTarget => !!t);
+  const todayHint =
+    prefs.today === null && classes.length + groups.length > targets.length
+      ? 'Weitere Klassen und Lerngruppen kannst du über „Anpassen“ hinzufügen.'
+      : null;
+  const customize = () => router.push('/startseite');
 
   return (
     <>
@@ -57,42 +74,65 @@ export default function ClassesScreen() {
           </Pressable>
         ) : null}
 
-        {data?.data.length ? <TodayPanel classes={data.data} /> : null}
+        {ready && classes.length + groups.length ? (
+          <TodayPanel targets={targets} hint={todayHint} onCustomize={customize} />
+        ) : null}
 
-        {data ? <Text style={styles.heading}>{groups.length ? 'Klassen & Lerngruppen' : 'Meine Klassen'}</Text> : null}
+        {data ? (
+          <View style={styles.headingRow}>
+            <Text style={styles.heading}>{groups.length ? 'Klassen & Lerngruppen' : 'Meine Klassen'}</Text>
+            {classes.length + groups.length ? <LinkButton label="Anpassen" onPress={customize} /> : null}
+          </View>
+        ) : null}
 
-        {groups.length > 0 ? (
+        {visibleClasses.length > 0 && visibleGroups.length > 0 ? (
           <View style={styles.segment} accessibilityRole="tablist">
-            <SegmentButton label="Klassen" active={tab === 'classes'} onPress={() => setTab('classes')} />
-            <SegmentButton label="Lerngruppen" active={tab === 'groups'} onPress={() => setTab('groups')} />
+            <SegmentButton label="Klassen" active={shownTab === 'classes'} onPress={() => setTab('classes')} />
+            <SegmentButton label="Lerngruppen" active={shownTab === 'groups'} onPress={() => setTab('groups')} />
           </View>
         ) : null}
 
         {isLoading ? <Loading /> : null}
         {error ? <ErrorBox message={error.message} onRetry={refetch} /> : null}
 
-        {data && tab === 'classes' ? (
-          data.data.length ? (
+        {data && shownTab === 'classes' ? (
+          visibleClasses.length ? (
             <View style={styles.grid}>
-              {data.data.map((c) => (
+              {visibleClasses.map((c) => (
                 <ClassCard key={c.id} item={c} />
               ))}
             </View>
-          ) : (
+          ) : classes.length ? null : (
             <EmptyState title="Dir sind noch keine Klassen zugewiesen." />
           )
         ) : null}
 
-        {data && tab === 'groups' ? (
+        {data && shownTab === 'groups' ? (
           <View style={styles.grid}>
-            {groups.map((g) => (
-              <GroupCard key={g.id} item={g} classes={data.data} />
+            {visibleGroups.map((g) => (
+              <GroupCard key={g.id} item={g} classes={classes} />
             ))}
           </View>
+        ) : null}
+
+        {hiddenCount > 0 ? (
+          <Text style={styles.greeting}>
+            {hiddenCount === 1 ? '1 Klasse/Lerngruppe ausgeblendet' : `${hiddenCount} Klassen/Lerngruppen ausgeblendet`}
+          </Text>
         ) : null}
       </ScrollView>
     </>
   );
+}
+
+function todayTarget(key: StartKey, classes: SchoolClass[], groups: LearningGroup[]): TodayTarget | null {
+  const scope = keyToScope(key);
+  if ('classId' in scope) {
+    const c = classes.find((x) => x.id === scope.classId);
+    return c ? { key, scope, name: c.name, color: c.color || colors.primary } : null;
+  }
+  const g = groups.find((x) => x.id === scope.groupId);
+  return g ? { key, scope, name: g.name, color: colors.accent } : null;
 }
 
 function SegmentButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
@@ -173,6 +213,7 @@ const styles = StyleSheet.create({
   syncFailed: { backgroundColor: colors.dangerSoft },
   syncText: { color: colors.warning, fontSize: font.size.sm, fontWeight: font.weight.medium },
   syncTextFailed: { color: colors.danger },
+  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   heading: { fontSize: font.size.xl, fontWeight: font.weight.bold, color: colors.text },
   greeting: { fontSize: font.size.lg, color: colors.textMuted },
   segment: {
