@@ -2,38 +2,33 @@ name: iOS App Build
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch: # Ermöglicht das manuelle Starten über das GitHub-Dashboard
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   build-ios:
     runs-on: macos-latest
-
     steps:
-      - name: 📂 Code auschecken
-        uses: actions/checkout@v4
-
-      - name: 🟢 Node.js einrichten
+      - uses: actions/checkout@v4
+      
+      - name: Node.js einrichten
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22  # Oder '24' / 'lts/*'
           cache: 'npm'
 
-      - name: 📦 Abhängigkeiten installieren
+      - name: Abhängigkeiten installieren
         run: npm ci
 
-      - name: 🚀 Expo & EAS CLI installieren
-        run: npm install -g eas-cli expo-cli
-
-      - name: 🏗️ Native iOS-Dateien generieren (Expo Prebuild)
+      - name: Expo Prebuild
         run: npx expo prebuild --platform ios
 
-      - name: ⚙️ CocoaPods installieren
-        run: |
-          cd ios
-          pod install
+      - name: CocoaPods installieren
+        run: cd ios && pod install
 
-      - name: 🛠️ iOS App kompilieren (Xcode)
+      - name: Xcode Build
         run: |
           cd ios
           xcodebuild -workspace *.xcworkspace \
@@ -41,12 +36,10 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: 📤 Fertiges Build-Artefakt hochladen
+      - name: App hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: ios-release-build
+          name: ios-build
           path: ios/build/Build/Products/Release-iphoneos/*.app
