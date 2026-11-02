@@ -69,8 +69,8 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
             compact={compact}
             onPress={() => actions.entryMenu(e, student, date)}
             onComplete={e.is_completed ? undefined : () => actions.complete(e, student, date)}
-            // In der kompakten Ansicht gibt es kein Wischen → Pausieren als eigener Knopf (wie ⏸ im Web).
-            onPause={compact && !e.is_completed ? () => actions.pause(e, student, date, true) : undefined}
+            // Pausieren als eigener Knopf (wie ⏸ im Web), in beiden Ansichten.
+            onPause={e.is_completed ? undefined : () => actions.pause(e, student, date, true)}
           />
         </SwipeRow>
       ))}
@@ -96,11 +96,9 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
               pauseLabel={resubmitted ? `Wiedervorlage${until ? ` bis ${formatDayMonth(until)}` : ''}` : undefined}
               onPress={() => actions.entryMenu(e, student, date, true, resubmitted)}
               onResume={
-                compact
-                  ? resubmitted
-                    ? () => actions.resubmit(e, student, date, null)
-                    : () => actions.pause(e, student, date, false)
-                  : undefined
+                resubmitted
+                  ? () => actions.resubmit(e, student, date, null)
+                  : () => actions.pause(e, student, date, false)
               }
               resumeLabel={resubmitted ? 'Wiedervorlage aufheben' : 'Wieder anzeigen'}
             />
