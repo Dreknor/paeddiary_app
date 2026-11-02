@@ -69,6 +69,8 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
             compact={compact}
             onPress={() => actions.entryMenu(e, student, date)}
             onComplete={e.is_completed ? undefined : () => actions.complete(e, student, date)}
+            // Pausieren als eigener Knopf (wie ⏸ im Web), in beiden Ansichten.
+            onPause={e.is_completed ? undefined : () => actions.pause(e, student, date, true)}
           />
         </SwipeRow>
       ))}
@@ -93,6 +95,12 @@ export function StudentDay({ index, student, date, actions, showPaused, compact 
               paused
               pauseLabel={resubmitted ? `Wiedervorlage${until ? ` bis ${formatDayMonth(until)}` : ''}` : undefined}
               onPress={() => actions.entryMenu(e, student, date, true, resubmitted)}
+              onResume={
+                resubmitted
+                  ? () => actions.resubmit(e, student, date, null)
+                  : () => actions.pause(e, student, date, false)
+              }
+              resumeLabel={resubmitted ? 'Wiedervorlage aufheben' : 'Wieder anzeigen'}
             />
           </SwipeRow>
         );
@@ -141,6 +149,9 @@ function EntryRow({
   pauseLabel,
   onPress,
   onComplete,
+  onPause,
+  onResume,
+  resumeLabel,
 }: {
   entry: WeekEntry;
   compact?: boolean;
@@ -148,6 +159,9 @@ function EntryRow({
   pauseLabel?: string;
   onPress: () => void;
   onComplete?: () => void;
+  onPause?: () => void;
+  onResume?: () => void;
+  resumeLabel?: string;
 }) {
   const open = !entry.is_completed;
   return (
@@ -187,6 +201,28 @@ function EntryRow({
           accessibilityLabel="Eintrag abschließen"
         >
           <Text style={styles.checkText}>✓</Text>
+        </Pressable>
+      ) : null}
+      {onPause ? (
+        <Pressable
+          onPress={onPause}
+          hitSlop={4}
+          style={({ pressed }) => [styles.check, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Eintrag an diesem Tag pausieren"
+        >
+          <Text style={styles.pauseText}>⏸</Text>
+        </Pressable>
+      ) : null}
+      {onResume ? (
+        <Pressable
+          onPress={onResume}
+          hitSlop={4}
+          style={({ pressed }) => [styles.check, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={resumeLabel ?? 'Wieder anzeigen'}
+        >
+          <Text style={styles.pauseText}>▶</Text>
         </Pressable>
       ) : null}
     </View>
@@ -276,6 +312,7 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.border,
   },
   checkText: { fontSize: font.size.lg, color: colors.success, fontWeight: font.weight.bold },
+  pauseText: { fontSize: font.size.md, color: colors.textMuted, fontWeight: font.weight.bold },
 
   columns: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   toggle: {
